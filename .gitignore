@@ -6,6 +6,7 @@ web/.env.local
 
 # cli
 cli/bin
+cli/dist
 cli/essay
 
 # misc
