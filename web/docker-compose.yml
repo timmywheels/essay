@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: write
+      POSTGRES_PASSWORD: write
+      POSTGRES_DB: write
+    ports:
+      - "5434:5432"
+    volumes:
+      - write_db:/var/lib/postgresql/data
+
+volumes:
+  write_db:
