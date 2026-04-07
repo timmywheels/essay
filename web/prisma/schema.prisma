@@ -8,20 +8,22 @@ datasource db {
 }
 
 model User {
-  id             String    @id @default(cuid())
-  name           String?
-  email          String?   @unique
-  emailVerified  DateTime?
-  image          String?
-  username       String?   @unique
+  id                   String    @id @default(cuid())
+  name                 String?
+  email                String?   @unique
+  emailVerified        DateTime?
+  image                String?
+  username             String?   @unique
   githubUsername       String?   @unique
   githubInstallationId String?
   githubRepo           String?
   cliToken             String?   @unique
-  createdAt      DateTime  @default(now())
-  posts          Post[]
-  accounts       Account[]
-  sessions       Session[]
+  createdAt            DateTime  @default(now())
+  posts                Post[]
+  accounts             Account[]
+  sessions             Session[]
+
+  @@map("users")
 }
 
 model Account {
@@ -40,6 +42,7 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@map("accounts")
 }
 
 model Session {
@@ -48,6 +51,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
 }
 
 model Post {
@@ -64,4 +69,5 @@ model Post {
   user        User      @relation(fields: [userId], references: [id])
 
   @@unique([userId, slug])
+  @@map("posts")
 }
