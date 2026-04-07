@@ -32,17 +32,22 @@ export default function OnboardingForm({ suggestion }: { suggestion: string }) {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
-      <div className="max-w-sm w-full space-y-6">
+      <div className="max-w-sm w-full space-y-8">
         <div className="space-y-1">
-          <h1 className="text-xl font-semibold">Choose your username</h1>
-          <p className="text-sm text-zinc-500">
+          <h1 className="text-xl font-semibold" style={{ color: "var(--foreground)" }}>
+            Choose your username
+          </h1>
+          <p className="text-sm" style={{ color: "var(--muted)" }}>
             Your posts will live at essay.sh/username
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex items-center border border-zinc-200 rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-zinc-900">
-            <span className="px-3 text-sm text-zinc-400 select-none border-r border-zinc-200 py-2">
+          <div className="flex items-stretch border" style={{ borderColor: "var(--border)", borderRadius: 0 }}>
+            <span
+              className="px-3 text-sm flex items-center select-none border-r"
+              style={{ color: "var(--muted)", borderColor: "var(--border)", borderRight: "1px dashed var(--border)" }}
+            >
               essay.sh/
             </span>
             <input
@@ -53,7 +58,8 @@ export default function OnboardingForm({ suggestion }: { suggestion: string }) {
               required
               minLength={2}
               maxLength={30}
-              className="flex-1 px-3 py-2 text-sm outline-none"
+              className="flex-1 px-3 py-3 text-sm outline-none bg-transparent"
+              style={{ color: "var(--foreground)" }}
             />
           </div>
 
@@ -62,9 +68,16 @@ export default function OnboardingForm({ suggestion }: { suggestion: string }) {
           <button
             type="submit"
             disabled={loading || username.length < 2}
-            className="w-full h-9 rounded-md bg-zinc-900 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+            className="w-full py-3 text-sm font-medium border transition-opacity hover:opacity-70 disabled:opacity-30"
+            style={{
+              borderStyle: "dashed",
+              borderColor: "var(--border)",
+              color: "var(--foreground)",
+              borderRadius: 0,
+              background: "transparent",
+            }}
           >
-            {loading ? "Saving..." : "Continue"}
+            {loading ? "saving..." : "continue"}
           </button>
         </form>
       </div>

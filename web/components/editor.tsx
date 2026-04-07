@@ -33,16 +33,17 @@ function generateSlug() {
 
 const baseTheme = EditorView.theme({
   "&": { fontSize: "14px", background: "transparent" },
-  "&.cm-editor": { outline: "none", border: "none" },
+  "&.cm-editor": { outline: "none", border: "none", background: "transparent" },
   "&.cm-editor.cm-focused": { outline: "none", border: "none" },
-  ".cm-content": { fontFamily: "var(--font-geist-mono)", padding: "0", minHeight: "60vh", caretColor: "#171717" },
+  ".cm-scroller": { background: "transparent" },
+  ".cm-content": { fontFamily: "var(--font-geist-mono)", padding: "0", minHeight: "60vh", caretColor: "var(--foreground)" },
   ".cm-focused": { outline: "none" },
-  ".cm-line": { padding: "0", lineHeight: "1.75" },
-  ".cm-cursor": { borderLeftColor: "#171717" },
-  ".cm-scroller": { overflow: "auto" },
+  ".cm-line": { padding: "0", lineHeight: "1.75", color: "var(--foreground)" },
+  ".cm-cursor": { borderLeftColor: "var(--foreground)" },
   ".cm-gutters": { display: "none" },
   ".cm-activeLine": { background: "transparent" },
-  ".cm-selectionBackground, &.cm-focused .cm-selectionBackground": { background: "#e4e4e7" },
+  ".cm-selectionBackground, &.cm-focused .cm-selectionBackground": { background: "var(--border)" },
+  ".cm-placeholder": { color: "var(--muted)" },
 });
 
 type SaveState = "idle" | "saving" | "saved" | "publishing";
@@ -145,13 +146,13 @@ export default function Editor({ username, post }: Props) {
   return (
     <main className="max-w-2xl mx-auto px-6 py-12 space-y-8">
       <div className="flex items-center justify-between">
-        <Link href="/dashboard" className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors">
+        <Link href="/dashboard" className="text-xs transition-opacity hover:opacity-60" style={{ color: "var(--muted)" }}>
           ← dashboard
         </Link>
 
         <div className="flex items-center gap-5">
           {/* Vim toggle */}
-          <button onClick={toggleVim} className="relative flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-zinc-600 transition-colors">
+          <button onClick={toggleVim} className="relative flex items-center gap-1.5 text-xs font-mono transition-opacity hover:opacity-60" style={{ color: "var(--muted)" }}>
             vim
             <AnimatePresence>
               {vimMode && (
@@ -160,7 +161,8 @@ export default function Editor({ username, post }: Props) {
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0, opacity: 0 }}
                   transition={{ duration: 0.15 }}
-                  className="w-1 h-1 rounded-full bg-zinc-600 inline-block"
+                  className="w-1 h-1 rounded-full inline-block"
+                  style={{ background: "var(--muted)" }}
                 />
               )}
             </AnimatePresence>
@@ -169,7 +171,8 @@ export default function Editor({ username, post }: Props) {
           {/* Visibility toggle */}
           <button
             onClick={() => setIsPublic((p) => !p)}
-            className="relative text-xs text-zinc-400 hover:text-zinc-600 transition-colors overflow-hidden"
+            className="relative text-xs transition-opacity hover:opacity-60 overflow-hidden"
+            style={{ color: "var(--muted)" }}
           >
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.span
@@ -189,7 +192,8 @@ export default function Editor({ username, post }: Props) {
           <button
             onClick={() => save(false)}
             disabled={saveState !== "idle"}
-            className="relative text-xs text-zinc-400 hover:text-zinc-600 underline decoration-dotted underline-offset-2 disabled:opacity-50 transition-colors overflow-hidden"
+            className="relative text-xs underline decoration-dotted underline-offset-2 disabled:opacity-50 transition-opacity hover:opacity-60 overflow-hidden"
+            style={{ color: "var(--muted)" }}
           >
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.span
@@ -209,7 +213,8 @@ export default function Editor({ username, post }: Props) {
           <button
             onClick={() => save(true)}
             disabled={saveState !== "idle" || !slug}
-            className="relative text-xs text-zinc-600 hover:text-zinc-900 disabled:opacity-30 transition-colors overflow-hidden"
+            className="relative text-xs disabled:opacity-30 transition-opacity hover:opacity-60 overflow-hidden"
+            style={{ color: "var(--foreground)" }}
           >
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.span
@@ -233,16 +238,18 @@ export default function Editor({ username, post }: Props) {
           value={title}
           onChange={handleTitleChange}
           placeholder="Title"
-          className="w-full text-2xl font-semibold placeholder:text-zinc-300 outline-none border-none bg-transparent"
+          className="w-full text-2xl font-semibold outline-none border-none bg-transparent"
+          style={{ color: "var(--foreground)" }}
         />
-        <div className="flex items-center gap-1 text-sm text-zinc-400">
+        <div className="flex items-center gap-1 text-sm" style={{ color: "var(--muted)" }}>
           <span>essay.sh/{username}/</span>
           <input
             type="text"
             value={slug}
             onChange={handleSlugChange}
             placeholder="slug"
-            className="flex-1 outline-none bg-transparent text-zinc-500 placeholder:text-zinc-300"
+            className="flex-1 outline-none bg-transparent"
+            style={{ color: "var(--muted)" }}
           />
         </div>
       </div>
