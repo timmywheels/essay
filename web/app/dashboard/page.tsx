@@ -2,6 +2,7 @@ import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { ExitIcon } from "@radix-ui/react-icons";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -43,15 +44,6 @@ export default async function DashboardPage() {
           >
             new post
           </Link>
-          <form action={async () => { "use server"; await signOut(); }}>
-            <button
-              type="submit"
-              className="text-xs transition-opacity hover:opacity-60"
-              style={{ color: "var(--muted)" }}
-            >
-              sign out
-            </button>
-          </form>
         </div>
       </header>
 
@@ -92,6 +84,11 @@ export default async function DashboardPage() {
           ))}
         </ul>
       )}
+      <form action={async () => { "use server"; await signOut(); }} className="fixed bottom-4 right-4">
+        <button type="submit" className="transition-opacity hover:opacity-60" style={{ color: "var(--muted)" }} aria-label="Sign out">
+          <ExitIcon width={16} height={16} />
+        </button>
+      </form>
     </main>
   );
 }
