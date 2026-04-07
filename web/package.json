@@ -1,5 +1,5 @@
 {
-  "name": "write",
+  "name": "@essay-sh/app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
