@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# essay.sh
 
-## Getting Started
+**Commit your thoughts to source.**
 
-First, run the development server:
+A minimalist publishing platform for developers. Every post is a markdown file in your own GitHub repo — no lock-in, no middleman. Write from the browser, vim, vscode, or anywhere that speaks markdown.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+→ [essay.sh](https://essay.sh)
+
+---
+
+## install
+
+```sh
+curl -fsSL essay.sh/install | sh
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Or download a binary directly from [releases](https://github.com/timmywheels/essay/releases/latest).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## usage
 
-## Learn More
+```sh
+# authenticate with your essay.sh account
+essay auth
 
-To learn more about Next.js, take a look at the following resources:
+# create a new post (opens $EDITOR)
+essay new "my post title"
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# list your posts
+essay list
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# edit a post by slug
+essay edit my-post-title
 
-## Deploy on Vercel
+# toggle public/private
+essay publish my-post-title
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## how it works
+
+1. **sign in** at [essay.sh](https://essay.sh) with GitHub
+2. **connect** a GitHub repo — your posts live there as markdown files
+3. **write** from the web editor or the CLI
+4. **publish** — posts are served at `essay.sh/username/post-slug`
+
+Every post is stored as a `.md` file with frontmatter in your repo. You own it forever.
+
+---
+
+## stack
+
+| layer | tech |
+|---|---|
+| web | Next.js 16 (App Router, ISR) |
+| auth | Auth.js v5 + GitHub App |
+| db | Prisma 7 + Neon (Postgres) |
+| storage | GitHub (via installation tokens) |
+| cli | Go + Cobra |
+| deploy | Vercel |
+
+---
+
+## development
+
+**prerequisites:** Node 20+, Go 1.23+, Docker
+
+```sh
+git clone https://github.com/timmywheels/essay
+cd essay
+
+# start postgres
+cd web && docker compose up -d
+
+# install deps + migrate
+pnpm install
+npx prisma db push
+
+# run web
+pnpm dev
+
+# build cli
+cd ../cli && make build
+./essay --help
+```
+
+Copy `web/.env.local.example` to `web/.env.local` and fill in:
+
+```sh
+DATABASE_URL=          # postgres connection string
+AUTH_SECRET=           # openssl rand -base64 32
+AUTH_GITHUB_ID=        # github app client id
+AUTH_GITHUB_SECRET=    # github app client secret
+GITHUB_APP_ID=         # github app id (numeric)
+GITHUB_APP_NAME=       # github app slug
+GITHUB_APP_PRIVATE_KEY= # pem key, \n for newlines
+```
+
+---
+
+## license
+
+MIT

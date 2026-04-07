@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { auth, signIn } from "@/auth";
-import { CrumpledPaperIcon, GitHubLogoIcon, DownloadIcon } from "@radix-ui/react-icons";
+import { ValueNoneIcon, GitHubLogoIcon, DownloadIcon } from "@radix-ui/react-icons";
 import { CliPreview } from "@/components/cli-preview";
+import { CopyInstall } from "@/components/copy-install";
 
 export default async function Home() {
   const session = await auth();
@@ -10,7 +11,7 @@ export default async function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center px-6">
       <div className="max-w-md w-full space-y-10 text-center">
         <div className="space-y-3">
-          <CrumpledPaperIcon className="mx-auto mb-2" width={28} height={28} style={{ color: "var(--muted)" }} />
+          <ValueNoneIcon className="mx-auto mb-2" width={28} height={28} style={{ color: "var(--muted)" }} />
           <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--foreground)" }}>
             essay.sh
           </h1>
@@ -70,7 +71,8 @@ export default async function Home() {
           </a>
         </div>
 
-        <div className="flex justify-center pt-2">
+        <div className="flex flex-col items-center gap-3">
+          <CopyInstall />
           <CliPreview />
         </div>
       </div>

@@ -1,53 +1,143 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { auth, signOut } from "@/auth";
 import { db } from "@/lib/db";
+import { ExitIcon } from "@radix-ui/react-icons";
+import { ActivityCalendar } from "@/components/activity-calendar";
+import { DeletePostButton } from "@/components/delete-post-button";
 
-export const revalidate = 60;
+function generateDemoDates() {
+  const dates: Date[] = [];
+  const now = new Date();
+  for (let i = 0; i < 60; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - Math.floor(Math.random() * 365));
+    dates.push(d);
+  }
+  return dates;
+}
 
-export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
+export default async function ProfilePage({ params, searchParams }: { params: Promise<{ username: string }>; searchParams: Promise<{ demo?: string }> }) {
   const { username } = await params;
+  const { demo } = await searchParams;
 
-  const user = await db.user.findUnique({
-    where: { username },
-    include: {
-      posts: {
-        where: { published: true, public: true },
-        orderBy: { publishedAt: "desc" },
-      },
-    },
-  });
+  const [session, user] = await Promise.all([
+    auth(),
+    db.user.findUnique({
+      where: { username },
+      include: { posts: { orderBy: { createdAt: "desc" } } },
+    }),
+  ]);
 
   if (!user) notFound();
 
+  const isOwner = session?.user?.id === user.id;
+  const visiblePosts = isOwner ? user.posts : user.posts.filter((p) => p.published && p.public);
+  const publishedPosts = user.posts.filter((p) => p.published && p.publishedAt);
+  const hasPublished = publishedPosts.length > 0;
+
+  const calendarDates = demo != null || !hasPublished
+    ? generateDemoDates()
+    : publishedPosts.map((p) => p.publishedAt as Date);
+
+  const postsMap = Object.fromEntries(
+    publishedPosts.map((p) => [
+      p.publishedAt!.toISOString().split("T")[0],
+      { title: p.title, slug: p.slug },
+    ])
+  );
+
   return (
     <main className="max-w-2xl mx-auto px-6 py-12 space-y-10">
-      <header>
-        <h1 className="text-xl font-semibold">{username}</h1>
+      {isOwner && !user.githubInstallationId && (
+        <div className="text-xs flex items-center gap-3" style={{ color: "var(--muted)" }}>
+          <span>Connect a GitHub repo to start publishing.</span>
+          <Link href="/connect" className="underline decoration-dotted underline-offset-2">
+            Connect repo →
+          </Link>
+        </div>
+      )}
+
+      <header className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold" style={{ color: "var(--foreground)" }}>{username}</h1>
+          {isOwner && (
+            <Link
+              href="/dashboard/new"
+              className="text-xs border px-3 py-1.5 transition-opacity hover:opacity-70"
+              style={{ borderStyle: "dashed", borderColor: "var(--border)", color: "var(--foreground)", borderRadius: 0 }}
+            >
+              new post
+            </Link>
+          )}
+        </div>
+
+        {hasPublished || demo != null ? (
+          <ActivityCalendar publishedDates={calendarDates} username={username} posts={postsMap} />
+        ) : (
+          <div style={{ position: "relative" }}>
+            <ActivityCalendar publishedDates={generateDemoDates()} username={username} interactive={false} />
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+              <p style={{ fontSize: "12px", color: "var(--muted)" }}>nothing published yet</p>
+            </div>
+          </div>
+        )}
       </header>
 
-      {user.posts.length === 0 ? (
-        <p className="text-sm text-zinc-400">Nothing published yet.</p>
+      {visiblePosts.length === 0 ? (
+        isOwner ? (
+          <p className="text-sm" style={{ color: "var(--muted)" }}>
+            No posts yet.{" "}
+            <Link href="/dashboard/new" className="underline decoration-dotted underline-offset-2">
+              Write your first one.
+            </Link>
+          </p>
+        ) : null
       ) : (
-        <ul className="divide-y divide-zinc-100">
-          {user.posts.map((post) => (
-            <li key={post.id} className="py-4">
-              <Link href={`/${username}/${post.slug}`} className="group space-y-1">
-                <p className="text-sm font-medium group-hover:underline underline-offset-2">
-                  {post.title}
-                </p>
-                {post.publishedAt && (
-                  <p className="text-xs text-zinc-400">
-                    {new Date(post.publishedAt).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
+        <ul className="space-y-6">
+          {visiblePosts.map((post) => (
+            <li key={post.id} className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1 space-y-1">
+                <Link
+                  href={post.published ? `/${username}/${post.slug}` : `/dashboard/posts/${post.id}`}
+                  className="group"
+                >
+                  <p className="text-sm font-medium group-hover:underline underline-offset-2" style={{ color: "var(--foreground)" }}>
+                    {post.title || "Untitled"}
                   </p>
-                )}
-              </Link>
+                </Link>
+                <p className="text-xs" style={{ color: "var(--muted)" }}>
+                  {post.published
+                    ? post.publishedAt
+                      ? new Date(post.publishedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+                      : "published"
+                    : "draft"}
+                  {post.published && !post.public && " · private"}
+                </p>
+              </div>
+              {isOwner && (
+                <div className="flex items-center gap-4 shrink-0">
+                  <Link
+                    href={`/dashboard/posts/${post.id}`}
+                    className="text-xs transition-opacity hover:opacity-60"
+                    style={{ color: "var(--muted)" }}
+                  >
+                    edit
+                  </Link>
+                  <DeletePostButton postId={post.id} />
+                </div>
+              )}
             </li>
           ))}
         </ul>
+      )}
+
+      {isOwner && (
+        <form action={async () => { "use server"; await signOut(); }} className="fixed bottom-4 right-4">
+          <button type="submit" className="transition-opacity hover:opacity-60" style={{ color: "var(--muted)" }} aria-label="Sign out">
+            <ExitIcon width={16} height={16} />
+          </button>
+        </form>
       )}
     </main>
   );
