@@ -14,24 +14,34 @@ export default async function Home() {
           </p>
         </div>
 
-        {session ? (
-          <Link
-            href="/dashboard"
-            className="inline-flex h-9 items-center justify-center rounded-md bg-zinc-900 px-6 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
-          >
-            Go to dashboard
-          </Link>
-        ) : (
-          <form action={async () => { "use server"; await signIn("github"); }}>
-            <button
-              type="submit"
-              className="inline-flex items-center justify-center w-10 h-10 rounded-sm bg-zinc-900 hover:bg-zinc-700 transition-colors"
-              aria-label="Sign in with GitHub"
+        <div className="flex flex-col items-center gap-4">
+          {session ? (
+            <Link
+              href="/dashboard"
+              className="inline-flex h-9 items-center justify-center rounded-md bg-zinc-900 px-6 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
             >
-              <GitHubMark />
-            </button>
-          </form>
-        )}
+              Go to dashboard
+            </Link>
+          ) : (
+            <form action={async () => { "use server"; await signIn("github"); }}>
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center w-10 h-10 rounded-sm bg-zinc-900 hover:bg-zinc-700 transition-colors"
+                aria-label="Sign in with GitHub"
+              >
+                <GitHubMark />
+              </button>
+            </form>
+          )}
+          <a
+            href="https://github.com/timmywheels/essay/releases/latest"
+            className="text-xs text-zinc-500 underline decoration-dotted underline-offset-2 hover:text-zinc-300 transition-colors"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            download cli
+          </a>
+        </div>
       </div>
     </main>
   );

@@ -1,0 +1,11 @@
+## Changelog
+* 25d7358cdf1b492c36add1e6b0a442a74b0d43bc add goreleaser
+* 2a8d511fd970ee4653bb5b01bbb5eed07ee89e67 update migrations
+* 60c77c73f936ae1cd31c7b246121c8680980bd0c update package.json
+* 57c3dbd0cd75afbe2f7d87f6ca836820fdd469fd update tables
+* 8473c40d0334288ade6350f0bb7ade02a7ca8f7a fix types
+* 3b90d68e71ce91305e31c1222ec13aeb0501a699 rm clerk
+* a6162ea949ad8ff3f7999b03467902bfc388c67e cli updates
+* bc3283e0a9966c9df097e1743d9ab15606cbe325 add makefile
+* 4fd248f3f2220a9031103b6650510ea3de9b5cfd init
+* 5923df5f2e65d1887afead61c1f70453eb4ed611 Initial commit from Create Next App
