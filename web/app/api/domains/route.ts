@@ -74,9 +74,12 @@ async function updateEdgeConfig(domain: string, username: string | null) {
     ? [{ operation: "upsert", key: domain, value: username }]
     : [{ operation: "delete", key: domain }];
 
-  await fetch(`https://api.vercel.com/v1/edge-config/${edgeConfigId}/items${teamQuery}`, {
+  const res = await fetch(`https://api.vercel.com/v1/edge-config/${edgeConfigId}/items${teamQuery}`, {
     method: "PATCH",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({ items }),
   });
+  if (!res.ok) {
+    console.error("Edge Config write failed", res.status, await res.text());
+  }
 }
