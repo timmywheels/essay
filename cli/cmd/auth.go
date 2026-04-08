@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
+	"time"
 
 	"essay.sh/cli/internal/api"
 	"essay.sh/cli/internal/config"
@@ -24,6 +26,20 @@ func openBrowser(url string) {
 		cmd = exec.Command("xdg-open", url)
 	}
 	_ = cmd.Start()
+}
+
+func copyToClipboard(text string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("pbcopy")
+	case "windows":
+		cmd = exec.Command("clip")
+	default:
+		cmd = exec.Command("xclip", "-selection", "clipboard")
+	}
+	cmd.Stdin = strings.NewReader(text)
+	_ = cmd.Run()
 }
 
 // GitHubClientID is set at build time via -ldflags, overridable by env var.
@@ -46,7 +62,9 @@ var authCmd = &cobra.Command{
 			return fmt.Errorf("failed to start auth: %w", err)
 		}
 
-		fmt.Printf("\nEnter code: %s\n\nOpening browser...\n", dc.UserCode)
+		copyToClipboard(dc.UserCode)
+		fmt.Printf("\nCode: %s (copied to clipboard)\n\nOpening browser in 2s...\n", dc.UserCode)
+		time.Sleep(2 * time.Second)
 		openBrowser(dc.VerificationURI)
 
 		githubToken, err := ghflow.PollForToken(clientID, dc.DeviceCode, dc.Interval)
