@@ -2,7 +2,8 @@
   "packages": {
     "cli": {
       "release-type": "go",
-      "changelog-path": "cli/CHANGELOG.md",
+      "path": "cli",
+      "changelog-path": "CHANGELOG.md",
       "tag-name": "v${version}"
     }
   },
