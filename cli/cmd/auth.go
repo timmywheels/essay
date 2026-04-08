@@ -18,9 +18,9 @@ var authCmd = &cobra.Command{
 	Use:   "auth",
 	Short: "Authenticate with essay.sh",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		clientID := os.Getenv("ESSAY_GITHUB_CLIENT_ID")
-		if clientID == "" {
-			clientID = GitHubClientID
+		clientID := GitHubClientID
+		if env := os.Getenv("ESSAY_GITHUB_CLIENT_ID"); env != "" {
+			clientID = env
 		}
 		if clientID == "" {
 			return fmt.Errorf("ESSAY_GITHUB_CLIENT_ID not set")
