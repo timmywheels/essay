@@ -30,7 +30,7 @@ essay auth
 
 ### new
 
-Creates a post and opens it in `$EDITOR`. Falls back to `vi` if `$EDITOR` is not set.
+Creates a post and opens it in `$EDITOR`. Falls back to `vi` if `$EDITOR` not set.
 
 ```sh
 essay new                            # auto-generated slug
