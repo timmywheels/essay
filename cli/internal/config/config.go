@@ -10,7 +10,6 @@ import (
 const (
 	KeyToken    = "token"
 	KeyUsername = "username"
-	KeyAPIBase  = "api_base"
 )
 
 func Init() {
@@ -24,12 +23,6 @@ func Init() {
 	viper.SetConfigName("config")
 	viper.SetConfigType("toml")
 	viper.AddConfigPath(cfgDir)
-
-	base := "https://essay.sh"
-	if v := os.Getenv("ESSAY_API"); v != "" {
-		base = v
-	}
-	viper.SetDefault(KeyAPIBase, base)
 
 	_ = viper.ReadInConfig()
 }
@@ -45,4 +38,10 @@ func Save() error {
 
 func Token() string    { return viper.GetString(KeyToken) }
 func Username() string { return viper.GetString(KeyUsername) }
-func APIBase() string  { return viper.GetString(KeyAPIBase) }
+
+func APIBase() string {
+	if v := os.Getenv("ESSAY_API"); v != "" {
+		return v
+	}
+	return "https://essay.sh"
+}

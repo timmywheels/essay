@@ -1,0 +1,10 @@
+{
+  "packages": {
+    "cli": {
+      "release-type": "go",
+      "component": "cli",
+      "tag-name-prefix": "v",
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}
