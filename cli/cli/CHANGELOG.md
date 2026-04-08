@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/timmywheels/essay/compare/cli-v0.2.0...cli-v0.3.0) (2026-04-08)
+
+
+### Features
+
+* add docs ([aa3ff58](https://github.com/timmywheels/essay/commit/aa3ff58af25830210a2d2bb1beb1b8f8fcbd33e5))
+
 ## [0.2.0](https://github.com/timmywheels/essay/compare/cli-v0.1.0...cli-v0.2.0) (2026-04-08)
 
 
