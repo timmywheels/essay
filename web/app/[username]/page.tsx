@@ -34,14 +34,15 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
   const isOwner = session?.user?.id === user.id;
   const visiblePosts = isOwner ? user.posts : user.posts.filter((p) => p.published && p.public);
   const publishedPosts = user.posts.filter((p) => p.published && p.publishedAt);
-  const hasPublished = publishedPosts.length > 0;
+  const publicPosts = publishedPosts.filter((p) => p.public);
+  const hasPublished = publicPosts.length > 0;
 
   const calendarDates = demo != null || !hasPublished
     ? generateDemoDates()
-    : publishedPosts.map((p) => p.publishedAt as Date);
+    : (isOwner ? publishedPosts : publicPosts).map((p) => p.publishedAt as Date);
 
   const postsMap = Object.fromEntries(
-    publishedPosts.map((p) => [
+    publicPosts.map((p) => [
       p.publishedAt!.toISOString().split("T")[0],
       { title: p.title, slug: p.slug },
     ])

@@ -109,7 +109,7 @@ export default function Editor({ username, post }: Props) {
 
     if (publish) {
       setIsPublished(true);
-      router.push(`/${username}/${slug}`);
+      router.push(isPublic ? `/${username}/${slug}` : `/${username}`);
       return;
     }
 
