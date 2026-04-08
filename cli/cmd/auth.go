@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"runtime"
 
 	"essay.sh/cli/internal/api"
 	"essay.sh/cli/internal/config"
@@ -10,6 +12,19 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+func openBrowser(url string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", url)
+	case "windows":
+		cmd = exec.Command("cmd", "/c", "start", url)
+	default:
+		cmd = exec.Command("xdg-open", url)
+	}
+	_ = cmd.Start()
+}
 
 // GitHubClientID is set at build time via -ldflags, overridable by env var.
 var GitHubClientID = ""
@@ -31,7 +46,8 @@ var authCmd = &cobra.Command{
 			return fmt.Errorf("failed to start auth: %w", err)
 		}
 
-		fmt.Printf("\nOpen this URL in your browser:\n\n  %s\n\nEnter code: %s\n\nWaiting...\n", dc.VerificationURI, dc.UserCode)
+		fmt.Printf("\nEnter code: %s\n\nOpening browser...\n", dc.UserCode)
+		openBrowser(dc.VerificationURI)
 
 		githubToken, err := ghflow.PollForToken(clientID, dc.DeviceCode, dc.Interval)
 		if err != nil {
