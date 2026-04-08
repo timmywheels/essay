@@ -13,6 +13,7 @@ export default async function SettingsPage() {
     where: { id: session.user.id },
     select: {
       name: true,
+      bio: true,
       username: true,
       links: true,
       profilePublic: true,
@@ -26,13 +27,14 @@ export default async function SettingsPage() {
 
   return (
     <main className="max-w-lg mx-auto px-6 py-12 space-y-12">
-      <div className="flex items-center gap-4">
+      <div className="space-y-2">
         <Link href={`/${user.username}`} className="text-xs transition-opacity hover:opacity-60" style={{ color: "var(--muted)" }}>← back</Link>
         <h1 className="text-sm font-medium" style={{ color: "var(--foreground)" }}>settings</h1>
       </div>
 
       <ProfileSettings
         initialName={user.name ?? ""}
+        initialBio={user.bio ?? ""}
         initialLinks={(user.links as { label: string; url: string }[]) ?? []}
         initialProfilePublic={user.profilePublic}
         initialShowUsername={user.showUsername}

@@ -72,6 +72,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
               <h1 className="text-xl font-semibold" style={{ color: "var(--foreground)" }}>{user.name || username}</h1>
             )}
             {user.name && user.showUsername && <p className="text-xs" style={{ color: "var(--muted)" }}>{username}</p>}
+            {user.bio && <p className="text-sm" style={{ color: "var(--muted)" }}>{user.bio}</p>}
             {Array.isArray(user.links) && user.links.length > 0 && (
               <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1">
                 {(user.links as { label: string; url: string }[]).map((link) => {

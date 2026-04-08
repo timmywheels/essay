@@ -20,6 +20,7 @@ model User {
   cliToken             String?   @unique
   customDomain         String?   @unique
   domainVerifiedAt     DateTime?
+  bio                  String?
   profilePublic        Boolean   @default(true)
   showUsername         Boolean   @default(true)
   links                Json?

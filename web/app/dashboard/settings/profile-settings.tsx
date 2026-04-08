@@ -17,14 +17,16 @@ function defaultLabel(url: string): string {
 
 interface Props {
   initialName: string;
+  initialBio: string;
   initialLinks: LinkItem[];
   initialProfilePublic: boolean;
   initialShowUsername: boolean;
   username: string;
 }
 
-export function ProfileSettings({ initialName, initialLinks, initialProfilePublic, initialShowUsername, username }: Props) {
+export function ProfileSettings({ initialName, initialBio, initialLinks, initialProfilePublic, initialShowUsername, username }: Props) {
   const [name, setName] = useState(initialName);
+  const [bio, setBio] = useState(initialBio);
   const [links, setLinks] = useState<LinkItem[]>(initialLinks.length ? initialLinks : []);
   const [profilePublic, setProfilePublic] = useState(initialProfilePublic);
   const [showUsername, setShowUsername] = useState(initialShowUsername);
@@ -37,6 +39,7 @@ export function ProfileSettings({ initialName, initialLinks, initialProfilePubli
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: name.trim() || null,
+        bio: bio.trim() || null,
         links: links
           .filter((l) => l.url.trim())
           .map((l) => ({ url: l.url.trim(), label: l.label.trim() || defaultLabel(l.url.trim()) })),
@@ -72,6 +75,19 @@ export function ProfileSettings({ initialName, initialLinks, initialProfilePubli
             onChange={(e) => setName(e.target.value)}
             placeholder={username}
             className="w-full px-3 py-2 text-sm bg-transparent outline-none"
+            style={{ border: "1px dashed var(--border)", color: "var(--foreground)", borderRadius: 0 }}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs" style={{ color: "var(--muted)" }}>bio</label>
+          <textarea
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            placeholder="a few words about you"
+            maxLength={280}
+            rows={3}
+            className="w-full px-3 py-2 text-sm bg-transparent outline-none resize-none"
             style={{ border: "1px dashed var(--border)", color: "var(--foreground)", borderRadius: 0 }}
           />
         </div>
