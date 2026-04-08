@@ -5,6 +5,10 @@ import { resolveUser } from "@/lib/cli-auth";
 import { getInstallationOctokit, buildMarkdown, writePostToGitHub } from "@/lib/github";
 import { uniqueNamesGenerator, adjectives, animals } from "unique-names-generator";
 
+function countWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
 const createSchema = z.object({
   title: z.string(),
   content: z.string(),
@@ -64,6 +68,7 @@ export async function POST(req: Request) {
       published: !!published,
       public: isPublic !== false,
       publishedAt,
+      wordCount: countWords(content),
       userId,
     },
   });

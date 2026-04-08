@@ -26,9 +26,9 @@ export default async function SettingsPage() {
   if (!user) redirect("/");
 
   return (
-    <main className="max-w-lg mx-auto px-6 py-12 space-y-12">
-      <div className="space-y-2">
-        <Link href={`/${user.username}`} className="text-xs transition-opacity hover:opacity-60" style={{ color: "var(--muted)" }}>← back</Link>
+    <main className="max-w-2xl mx-auto px-6 py-12 space-y-12">
+      <div>
+        <Link href={`/${user.username}`} className="text-xs transition-opacity hover:opacity-60 block mb-6" style={{ color: "var(--muted)" }}>← back</Link>
         <h1 className="text-sm font-medium" style={{ color: "var(--foreground)" }}>settings</h1>
       </div>
 

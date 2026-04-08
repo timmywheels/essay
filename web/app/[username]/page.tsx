@@ -5,7 +5,7 @@ import { Link2Icon } from "@radix-ui/react-icons";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { ActivityCalendar } from "@/components/activity-calendar";
-import { DeletePostButton } from "@/components/delete-post-button";
+import { PostList } from "@/components/post-list";
 import { ProfileMenu } from "@/components/profile-menu";
 import { EssayBadge } from "@/components/essay-badge";
 
@@ -18,6 +18,18 @@ function generateDemoDates() {
     dates.push(d);
   }
   return dates;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
+  const { username } = await params;
+  const user = await db.user.findUnique({ where: { username }, select: { name: true, bio: true, profilePublic: true } });
+  if (!user?.profilePublic) return {};
+  const displayName = user.name || username;
+  return {
+    title: displayName,
+    description: user.bio || `Essays by ${displayName}.`,
+    openGraph: { title: displayName, description: user.bio || `Essays by ${displayName}.` },
+  };
 }
 
 export default async function ProfilePage({ params, searchParams }: { params: Promise<{ username: string }>; searchParams: Promise<{ demo?: string }> }) {
@@ -48,14 +60,14 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
     : (isOwner ? publishedPosts : publicPosts).map((p) => p.publishedAt as Date);
 
   const postsMap = Object.fromEntries(
-    publicPosts.map((p) => [
+    (isOwner ? publishedPosts : publicPosts).map((p) => [
       p.publishedAt!.toISOString().split("T")[0],
       { title: p.title, slug: p.slug },
     ])
   );
 
   return (
-    <main className="max-w-2xl mx-auto px-6 py-12 space-y-10">
+    <main className="max-w-2xl mx-auto px-6 py-12 space-y-6">
       {isOwner && !user.githubInstallationId && (
         <div className="text-xs flex items-center gap-3" style={{ color: "var(--muted)" }}>
           <span>Connect a GitHub repo to start publishing.</span>
@@ -112,13 +124,15 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
               className="text-xs border px-3 py-1.5 transition-opacity hover:opacity-70 shrink-0"
               style={{ borderStyle: "dashed", borderColor: "var(--border)", color: "var(--foreground)", borderRadius: 0 }}
             >
-              new post
+              + new post
             </Link>
           )}
         </div>
 
         {hasPublished || demo != null ? (
-          <ActivityCalendar publishedDates={calendarDates} username={username} posts={postsMap} />
+          <div className="space-y-2">
+            <ActivityCalendar publishedDates={calendarDates} username={username} posts={postsMap} />
+          </div>
         ) : (
           <div style={{ position: "relative" }}>
             <div style={{ filter: "blur(2px)", opacity: 0.5 }}>
@@ -141,49 +155,14 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
           </p>
         ) : null
       ) : (
-        <ul className="space-y-6">
-          {visiblePosts.map((post) => (
-            <li key={post.id} className="flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1 space-y-1">
-                <Link
-                  href={post.published ? (isCustomDomain ? `/${post.slug}` : `/${username}/${post.slug}`) : `/dashboard/posts/${post.id}`}
-                  className="group"
-                >
-                  <p className="text-sm font-medium group-hover:underline underline-offset-2" style={{ color: "var(--foreground)" }}>
-                    {post.title || "Untitled"}
-                  </p>
-                </Link>
-                <p className="text-xs" style={{ color: "var(--muted)" }}>
-                  {post.published
-                    ? post.publishedAt
-                      ? new Date(post.publishedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
-                      : "published"
-                    : "draft"}
-                  {post.published && !post.public && " · private"}
-                </p>
-              </div>
-              {isOwner && (
-                <div className="flex items-center gap-4 shrink-0">
-                  <Link
-                    href={`/dashboard/posts/${post.id}`}
-                    className="text-xs transition-opacity hover:opacity-60"
-                    style={{ color: "var(--muted)" }}
-                  >
-                    edit
-                  </Link>
-                  <DeletePostButton postId={post.id} />
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
+        <PostList posts={visiblePosts} isOwner={isOwner} isCustomDomain={isCustomDomain} username={username} />
       )}
 
       {isOwner && (
         <ProfileMenu initialProfilePublic={user.profilePublic} />
       )}
 
-      {!isOwner && <EssayBadge username={username} />}
+      <EssayBadge username={username} />
     </main>
   );
 }

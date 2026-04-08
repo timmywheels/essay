@@ -5,6 +5,10 @@ import { revalidatePath } from "next/cache";
 import { resolveUser } from "@/lib/cli-auth";
 import { getInstallationOctokit, buildMarkdown, writePostToGitHub, deletePostFromGitHub } from "@/lib/github";
 
+function countWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
 const patchSchema = z.object({
   title: z.string().optional(),
   content: z.string().optional(),
@@ -64,7 +68,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const updated = await db.post.update({
     where: { id },
-    data: { title, content, slug, published: !!published, public: !!isPublic, publishedAt },
+    data: { title, content, slug, published: !!published, public: !!isPublic, publishedAt, wordCount: countWords(content) },
   });
 
   revalidatePath(`/${user.username}/${slug}`);

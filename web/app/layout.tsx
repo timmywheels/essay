@@ -14,8 +14,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "essay.sh",
-  description: "Commit your thoughts to source.",
+  title: { default: "essay.sh", template: "%s · essay.sh" },
+  description: "Write in markdown. Publish from the CLI. Keep your writing in git.",
+  metadataBase: new URL("https://essay.sh"),
+  openGraph: {
+    siteName: "essay.sh",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary",
+    site: "@essaydotsh",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

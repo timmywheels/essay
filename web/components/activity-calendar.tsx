@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 const WEEKS = 52;
 const W = 1000;
 const H = 80;
-const FLOOR = H - 6;
+const FLOOR = H - 10;
 const CEIL = 8;
 
 interface Props {
@@ -61,7 +61,7 @@ export function ActivityCalendar({ publishedDates, username, posts = {}, interac
     const wi = Math.floor((d.getTime() - start.getTime()) / 864e5 / 7);
     if (wi >= 0 && wi < WEEKS) {
       weeks[wi].count++;
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const key = d.toISOString().split("T")[0];
       if (posts[key]) weeks[wi].postLinks.push(posts[key]);
     }
   }
@@ -89,16 +89,27 @@ export function ActivityCalendar({ publishedDates, username, posts = {}, interac
     setHoveredWeek(Math.max(0, Math.min(WEEKS - 1, Math.round(rel * (WEEKS - 1)))));
   }
 
+  function handleClick() {
+    if (hoveredWeek === null) return;
+    const slug = weeks[hoveredWeek].postLinks[0]?.slug;
+    if (!slug) return;
+    const el = document.getElementById(`post-${slug}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.dispatchEvent(new CustomEvent("post-highlight", { detail: { slug } }));
+  }
+
   return (
     <div>
+      <div style={{ maskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)", opacity: 0.75 }}>
       <svg
         ref={svgRef}
         width="100%"
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMinYMid meet"
-        style={{ display: "block", overflow: "visible", cursor: interactive ? "crosshair" : "default" }}
+        style={{ display: "block", overflow: "visible", cursor: interactive ? (hoveredWeek !== null && weeks[hoveredWeek]?.postLinks.length > 0 ? "pointer" : "crosshair") : "default" }}
         onMouseMove={interactive ? handleMouseMove : undefined}
-        onMouseLeave={interactive ? () => setHoveredWeek(null) : undefined}
+        onClick={interactive ? handleClick : undefined}
       >
         <defs>
           <linearGradient id={`${id}-g`} x1="0" y1="0" x2="0" y2="1">
@@ -152,6 +163,7 @@ export function ActivityCalendar({ publishedDates, username, posts = {}, interac
           </>
         )}
       </svg>
+      </div>
 
       <div style={{ height: interactive ? "20px" : 0, marginTop: interactive ? "8px" : 0, overflow: "hidden" }}>
         <AnimatePresence mode="wait">

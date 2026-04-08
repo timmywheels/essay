@@ -5,6 +5,23 @@ import { AnimatePresence, motion } from "motion/react";
 
 type VerificationRecord = { type: string; domain: string; value: string };
 
+function CopyCell({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+  return (
+    <td className="py-1" style={{ wordBreak: "break-all" }}>
+      <button onClick={copy} className="text-left hover:opacity-70 transition-opacity inline" style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", color: "inherit" }}>
+        {value}
+        <span style={{ marginLeft: "0.5em", color: "var(--foreground)", opacity: copied ? 1 : 0, transition: "opacity 0.2s ease" }}>copied</span>
+      </button>
+    </td>
+  );
+}
+
 function DnsTable({
   records,
 }: {
@@ -31,15 +48,9 @@ function DnsTable({
       <tbody>
         {records.map((r, i) => (
           <tr key={i}>
-            <td className="py-1 pr-4" style={{ whiteSpace: "nowrap" }}>
-              {r.type}
-            </td>
-            <td className="py-1 pr-4" style={{ whiteSpace: "nowrap" }}>
-              {r.name}
-            </td>
-            <td className="py-1" style={{ wordBreak: "break-all" }}>
-              {r.value}
-            </td>
+            <td className="py-1 pr-4" style={{ whiteSpace: "nowrap" }}>{r.type}</td>
+            <td className="py-1 pr-4" style={{ whiteSpace: "nowrap" }}>{r.name}</td>
+            <CopyCell value={r.value} />
           </tr>
         ))}
       </tbody>
