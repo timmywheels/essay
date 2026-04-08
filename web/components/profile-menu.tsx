@@ -172,11 +172,10 @@ function DomainPanel({ onBack, initialDomain, initialVerifiedAt }: { onBack: () 
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                   <DnsTable records={isApex
                     ? [
-                        ...aValues.map((v) => ({ type: "A",     name: "@",   value: v })),
-                        ...cnames.map((v) => ({ type: "CNAME", name: "www", value: v })),
-                      ].filter((r) => r.value)
-                    : cnames.map((v) => ({ type: "CNAME", name: savedDomain!.split(".")[0], value: v }))
-                      .filter((r) => r.value)
+                        { type: "A",     name: "@",   value: aValues[0] ?? "76.76.21.21" },
+                        { type: "CNAME", name: "www", value: cnames[0] ?? "cname.vercel-dns.com" },
+                      ]
+                    : [{ type: "CNAME", name: savedDomain!.split(".")[0], value: cnames[0] ?? "cname.vercel-dns.com" }]
                   } />
                 </motion.div>
               )}

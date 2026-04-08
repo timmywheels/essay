@@ -25,7 +25,10 @@ async function handleCustomDomain(req: NextRequest): Promise<NextResponse | null
   try {
     username = (await get<string>(hostname)) ?? null;
   } catch {
-    // Edge Config not configured — fall back to API lookup
+    // Edge Config unavailable — fall through to DB lookup below
+  }
+
+  if (!username) {
     try {
       const res = await fetch(`https://${APP_HOSTNAME}/api/domains/lookup?domain=${hostname}`);
       if (res.ok) username = (await res.json()).username ?? null;
