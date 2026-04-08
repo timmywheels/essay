@@ -50,15 +50,15 @@ function DomainPanel({ onBack, initialDomain, initialVerifiedAt }: { onBack: () 
   const [aValues, setAValues] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!initialDomain || !!initialVerifiedAt) return;
+    if (!initialDomain) return;
     fetch("/api/domains/verify", { method: "POST" })
       .then((r) => r.json())
       .then((data) => {
-      setOwnershipRecords(data.verification ?? []);
-      setCnames(data.cnames ?? []);
-      setAValues(data.aValues ?? []);
-    });
-  }, [initialDomain, initialVerifiedAt]);
+        setOwnershipRecords(data.verification ?? []);
+        setCnames(data.cnames ?? []);
+        setAValues(data.aValues ?? []);
+      });
+  }, [initialDomain]);
 
   async function save() {
     if (!input.trim()) return;
