@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { auth, signIn } from "@/auth";
-import { ValueNoneIcon, GitHubLogoIcon, DownloadIcon } from "@radix-ui/react-icons";
+import { GitHubLogoIcon, DownloadIcon } from "@radix-ui/react-icons";
 import { CliPreview } from "@/components/cli-preview";
 import { CopyInstall } from "@/components/copy-install";
+import { TextSelectIcon } from "@/components/icons/text-select-icon";
 
 export default async function Home() {
   const session = await auth();
@@ -11,7 +12,7 @@ export default async function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center px-6">
       <div className="max-w-md w-full space-y-10 text-center">
         <div className="space-y-3">
-          <ValueNoneIcon className="mx-auto mb-2" width={28} height={28} style={{ color: "var(--muted)" }} />
+          <TextSelectIcon size={28} className="mx-auto mb-2" color="var(--muted)" />
           <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--foreground)" }}>
             essay.sh
           </h1>
