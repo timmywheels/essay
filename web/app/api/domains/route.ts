@@ -46,7 +46,13 @@ export async function POST(req: NextRequest) {
   // Write to Edge Config for fast middleware lookup
   await updateEdgeConfig(domain, user.username!);
 
-  return NextResponse.json({ domain, verified: vercelResult.verified ?? false, verification: vercelResult.verification });
+  return NextResponse.json({
+    domain,
+    verified: vercelResult.verified ?? false,
+    verification: vercelResult.verification,
+    cnames: vercelResult.cnames ?? [],
+    aValues: vercelResult.aValues ?? [],
+  });
 }
 
 export async function DELETE(req: NextRequest) {

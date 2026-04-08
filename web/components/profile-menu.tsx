@@ -46,12 +46,18 @@ function DomainPanel({ onBack, initialDomain, initialVerifiedAt }: { onBack: () 
   const [error, setError] = useState<string | null>(null);
   const [showDns, setShowDns] = useState(false);
   const [ownershipRecords, setOwnershipRecords] = useState<VerificationRecord[]>([]);
+  const [cnames, setCnames] = useState<string[]>([]);
+  const [aValues, setAValues] = useState<string[]>([]);
 
   useEffect(() => {
     if (!initialDomain || !!initialVerifiedAt) return;
     fetch("/api/domains/verify", { method: "POST" })
       .then((r) => r.json())
-      .then((data) => setOwnershipRecords(data.verification ?? []));
+      .then((data) => {
+      setOwnershipRecords(data.verification ?? []);
+      setCnames(data.cnames ?? []);
+      setAValues(data.aValues ?? []);
+    });
   }, [initialDomain, initialVerifiedAt]);
 
   async function save() {
@@ -67,6 +73,8 @@ function DomainPanel({ onBack, initialDomain, initialVerifiedAt }: { onBack: () 
     setSavedDomain(data.domain);
     setVerified(data.verified ?? false);
     setOwnershipRecords(data.verification ?? []);
+    setCnames(data.cnames ?? []);
+    setAValues(data.aValues ?? []);
     setShowDns(true);
     setStatus("idle");
   }
@@ -84,6 +92,8 @@ function DomainPanel({ onBack, initialDomain, initialVerifiedAt }: { onBack: () 
     const res = await fetch("/api/domains/verify", { method: "POST" });
     const data = await res.json();
     if (!res.ok) { setError(data.error ?? "Verification failed"); setStatus("idle"); return; }
+    setCnames(data.cnames ?? []);
+    setAValues(data.aValues ?? []);
     if (data.verified) {
       setVerified(true);
       setOwnershipRecords([]);
@@ -162,10 +172,11 @@ function DomainPanel({ onBack, initialDomain, initialVerifiedAt }: { onBack: () 
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                   <DnsTable records={isApex
                     ? [
-                        { type: "A",     name: "@",   value: "76.76.21.21" },
-                        { type: "CNAME", name: "www", value: "cname.vercel-dns.com" },
-                      ]
-                    : [{ type: "CNAME", name: savedDomain!.split(".")[0], value: "cname.vercel-dns.com" }]
+                        ...aValues.map((v) => ({ type: "A",     name: "@",   value: v })),
+                        ...cnames.map((v) => ({ type: "CNAME", name: "www", value: v })),
+                      ].filter((r) => r.value)
+                    : cnames.map((v) => ({ type: "CNAME", name: savedDomain!.split(".")[0], value: v }))
+                      .filter((r) => r.value)
                   } />
                 </motion.div>
               )}

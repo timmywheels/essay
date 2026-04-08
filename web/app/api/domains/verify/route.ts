@@ -17,5 +17,10 @@ export async function POST() {
     await db.user.update({ where: { id: user.id }, data: { domainVerifiedAt: new Date() } });
   }
 
-  return NextResponse.json({ verified, verification: result.verification ?? [] });
+  return NextResponse.json({
+    verified,
+    verification: result.verification ?? [],
+    cnames: result.cnames ?? [],
+    aValues: result.aValues ?? [],
+  });
 }
