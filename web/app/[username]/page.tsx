@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { auth, signOut } from "@/auth";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { ExitIcon } from "@radix-ui/react-icons";
 import { ActivityCalendar } from "@/components/activity-calendar";
 import { DeletePostButton } from "@/components/delete-post-button";
+import { ProfileMenu } from "@/components/profile-menu";
 
 function generateDemoDates() {
   const dates: Date[] = [];
@@ -136,11 +136,10 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
       )}
 
       {isOwner && (
-        <form action={async () => { "use server"; await signOut(); }} className="fixed bottom-4 right-4">
-          <button type="submit" className="transition-opacity hover:opacity-60" style={{ color: "var(--muted)" }} aria-label="Sign out">
-            <ExitIcon width={16} height={16} />
-          </button>
-        </form>
+        <ProfileMenu
+          initialDomain={user.customDomain ?? null}
+          initialVerifiedAt={user.domainVerifiedAt?.toISOString() ?? null}
+        />
       )}
     </main>
   );

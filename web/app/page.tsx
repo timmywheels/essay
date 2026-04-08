@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth, signIn } from "@/auth";
 import { GitHubLogoIcon, DownloadIcon } from "@radix-ui/react-icons";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { CliPreview } from "@/components/cli-preview";
 import { CopyInstall } from "@/components/copy-install";
 import { TextSelectIcon } from "@/components/icons/text-select-icon";
@@ -9,6 +10,8 @@ export default async function Home() {
   const session = await auth();
 
   return (
+    <>
+    <ThemeToggle />
     <main className="flex min-h-screen flex-col items-center justify-center px-6">
       <div className="max-w-md w-full space-y-10 text-center">
         <div className="space-y-3">
@@ -78,6 +81,7 @@ export default async function Home() {
         </div>
       </div>
     </main>
+    </>
   );
 }
 

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const revalidate = 60;
 
@@ -23,6 +24,8 @@ export default async function PostPage({ params }: { params: Promise<{ username:
   if (!post) notFound();
 
   return (
+    <>
+    <ThemeToggle />
     <main className="max-w-2xl mx-auto px-6 py-12 space-y-10">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold leading-snug">{post.title}</h1>
@@ -49,5 +52,6 @@ export default async function PostPage({ params }: { params: Promise<{ username:
         {post.content}
       </article>
     </main>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 import { useEffect, useState } from "react";
 import { SunIcon, MoonIcon } from "@radix-ui/react-icons";
 
@@ -10,7 +10,7 @@ export function ThemeToggle() {
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
 
-  const isDark = theme === "dark";
+  const isDark = theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   return (
     <button

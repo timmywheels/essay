@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTheme } from "@/components/theme-provider";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
 import { vim, Vim } from "@replit/codemirror-vim";
 import { markdown } from "@codemirror/lang-markdown";
@@ -59,6 +60,9 @@ export default function Editor({ username, post }: Props) {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [vimMode, setVimMode] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const stored = localStorage.getItem("editor-vim-mode");
@@ -262,6 +266,13 @@ export default function Editor({ username, post }: Props) {
                 minWidth: "120px",
               }}
             >
+              <button
+                onClick={() => mounted && setTheme(theme === "dark" ? "light" : "dark")}
+                className="flex items-center justify-between w-full text-xs transition-opacity hover:opacity-60"
+                style={{ color: "var(--muted)" }}
+              >
+                <span>{mounted && theme === "dark" ? "light mode" : "dark mode"}</span>
+              </button>
               <button
                 onClick={toggleVim}
                 className="flex items-center justify-between w-full text-xs transition-opacity hover:opacity-60"

@@ -18,11 +18,14 @@ model User {
   githubInstallationId String?
   githubRepo           String?
   cliToken             String?   @unique
+  customDomain         String?   @unique
+  domainVerifiedAt     DateTime?
   createdAt            DateTime  @default(now())
   posts                Post[]
   accounts             Account[]
   sessions             Session[]
 
+  @@index([customDomain])
   @@map("users")
 }
 
