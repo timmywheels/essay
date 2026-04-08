@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
-import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,14 +21,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('theme');document.documentElement.classList.toggle('dark',t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))}catch(e){}` }} />
+      </head>
       <body className="min-h-full">
-        <Script id="theme-init" strategy="beforeInteractive">{`
-          try {
-            const t = localStorage.getItem('theme');
-            const dark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
-            document.documentElement.classList.toggle('dark', dark);
-          } catch {}
-        `}</Script>
         <ThemeProvider>
           {children}
         </ThemeProvider>

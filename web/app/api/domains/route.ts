@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { addDomainToVercel, removeDomainFromVercel } from "@/lib/vercel-domains";
@@ -7,17 +8,20 @@ function normalizeDomain(raw: string): string {
   return raw.replace(/^https?:\/\//, "").replace(/\/.*$/, "").toLowerCase().trim();
 }
 
+const domainSchema = z.object({
+  domain: z.string()
+    .transform(normalizeDomain)
+    .refine((v) => /^[a-z0-9]([a-z0-9\-\.]+)?[a-z0-9]$/.test(v), "Invalid domain format"),
+});
+
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { domain: rawDomain } = await req.json();
-  if (!rawDomain) return NextResponse.json({ error: "domain required" }, { status: 400 });
+  const parsed = domainSchema.safeParse(await req.json());
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const domain = normalizeDomain(rawDomain);
-  if (!/^[a-z0-9]([a-z0-9\-\.]+)?[a-z0-9]$/.test(domain)) {
-    return NextResponse.json({ error: "Invalid domain format" }, { status: 400 });
-  }
+  const domain = parsed.data.domain;
 
   const user = await db.user.findUnique({ where: { id: session.user.id } });
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });

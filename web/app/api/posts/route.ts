@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/cli-auth";
 import { getInstallationOctokit, buildMarkdown, writePostToGitHub } from "@/lib/github";
 import { uniqueNamesGenerator, adjectives, animals } from "unique-names-generator";
+
+const createSchema = z.object({
+  title: z.string(),
+  content: z.string(),
+  slug: z.string().regex(/^[a-z0-9-]+$/, "Invalid slug").optional(),
+  published: z.boolean().optional(),
+  public: z.boolean().optional(),
+});
 
 export async function GET(req: Request) {
   const resolved = await resolveUser(req);
@@ -27,17 +36,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "GitHub repo not connected." }, { status: 400 });
   }
 
-  const { title, content, slug: rawSlug, published, public: isPublic } = await req.json();
+  const parsed = createSchema.safeParse(await req.json());
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+
+  const { title, content, slug: rawSlug, published, public: isPublic } = parsed.data;
 
   const slug = rawSlug || uniqueNamesGenerator({
     dictionaries: [adjectives, animals],
     separator: "-",
     length: 2,
   });
-
-  if (!/^[a-z0-9-]+$/.test(slug)) {
-    return NextResponse.json({ error: "Invalid slug." }, { status: 400 });
-  }
 
   const conflict = await db.post.findUnique({
     where: { userId_slug: { userId, slug } },

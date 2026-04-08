@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { db } from "@/lib/db";
 import { randomBytes } from "crypto";
 
+const schema = z.object({
+  github_token: z.string().min(1),
+});
+
 export async function POST(req: NextRequest) {
-  const { github_token } = await req.json();
-  if (!github_token) {
-    return NextResponse.json({ error: "github_token required" }, { status: 400 });
-  }
+  const parsed = schema.safeParse(await req.json());
+  if (!parsed.success) return NextResponse.json({ error: "github_token required" }, { status: 400 });
+
+  const { github_token } = parsed.data;
 
   // Verify token with GitHub and get user info
   const ghRes = await fetch("https://api.github.com/user", {

@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { headers } from "next/headers";
+import { Link2Icon } from "@radix-ui/react-icons";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { ActivityCalendar } from "@/components/activity-calendar";
 import { DeletePostButton } from "@/components/delete-post-button";
 import { ProfileMenu } from "@/components/profile-menu";
+import { EssayBadge } from "@/components/essay-badge";
 
 function generateDemoDates() {
   const dates: Date[] = [];
@@ -65,11 +67,48 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
 
       <header className="space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold" style={{ color: "var(--foreground)" }}>{username}</h1>
+          <div className="space-y-1">
+            {(user.name || user.showUsername) && (
+              <h1 className="text-xl font-semibold" style={{ color: "var(--foreground)" }}>{user.name || username}</h1>
+            )}
+            {user.name && user.showUsername && <p className="text-xs" style={{ color: "var(--muted)" }}>{username}</p>}
+            {Array.isArray(user.links) && user.links.length > 0 && (
+              <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1">
+                {(user.links as { label: string; url: string }[]).map((link) => {
+                  let display = link.label;
+                  if (!display) {
+                    try { const u = new URL(link.url); display = (u.hostname + u.pathname.replace(/\/$/, "")).replace(/^www\./, ""); } catch { display = link.url; }
+                  }
+                  if (display.length > 30) display = display.slice(0, 28) + "…";
+                  let href = link.url;
+                  try {
+                    const u = new URL(link.url);
+                    u.searchParams.set("utm_source", "essay.sh");
+                    u.searchParams.set("utm_medium", "profile");
+                    u.searchParams.set("utm_campaign", username);
+                    href = u.toString();
+                  } catch { /* keep original */ }
+                  return (
+                    <a
+                      key={link.url}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs transition-opacity hover:opacity-60"
+                      style={{ color: "var(--muted)" }}
+                    >
+                      <Link2Icon />
+                      {display}
+                    </a>
+                  );
+                })}
+              </div>
+            )}
+          </div>
           {isOwner && (
             <Link
               href="/dashboard/new"
-              className="text-xs border px-3 py-1.5 transition-opacity hover:opacity-70"
+              className="text-xs border px-3 py-1.5 transition-opacity hover:opacity-70 shrink-0"
               style={{ borderStyle: "dashed", borderColor: "var(--border)", color: "var(--foreground)", borderRadius: 0 }}
             >
               new post
@@ -140,12 +179,10 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
       )}
 
       {isOwner && (
-        <ProfileMenu
-          initialDomain={user.customDomain ?? null}
-          initialVerifiedAt={user.domainVerifiedAt?.toISOString() ?? null}
-          initialProfilePublic={user.profilePublic}
-        />
+        <ProfileMenu initialProfilePublic={user.profilePublic} />
       )}
+
+      {!isOwner && <EssayBadge username={username} />}
     </main>
   );
 }

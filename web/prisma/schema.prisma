@@ -21,6 +21,8 @@ model User {
   customDomain         String?   @unique
   domainVerifiedAt     DateTime?
   profilePublic        Boolean   @default(true)
+  showUsername         Boolean   @default(true)
+  links                Json?
   createdAt            DateTime  @default(now())
   posts                Post[]
   accounts             Account[]

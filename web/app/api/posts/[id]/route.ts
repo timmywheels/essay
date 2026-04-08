@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { resolveUser } from "@/lib/cli-auth";
 import { getInstallationOctokit, buildMarkdown, writePostToGitHub, deletePostFromGitHub } from "@/lib/github";
+
+const patchSchema = z.object({
+  title: z.string().optional(),
+  content: z.string().optional(),
+  slug: z.string().regex(/^[a-z0-9-]+$/, "Invalid slug").optional(),
+  published: z.boolean().optional(),
+  public: z.boolean().optional(),
+});
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,14 +38,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: "GitHub repo not connected." }, { status: 400 });
   }
 
-  const body = await req.json();
-  const title = body.title ?? post.title;
-  const content = body.content || post.content;
-  const slug = body.slug ?? post.slug;
-  const published = body.published ?? post.published;
-  const isPublic = body.public ?? post.public;
+  const parsed = patchSchema.safeParse(await req.json());
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  if (!slug || !/^[a-z0-9-]+$/.test(slug)) return NextResponse.json({ error: "Invalid slug." }, { status: 400 });
+  const title = parsed.data.title ?? post.title;
+  const content = parsed.data.content ?? post.content;
+  const slug = parsed.data.slug ?? post.slug;
+  const published = parsed.data.published ?? post.published;
+  const isPublic = parsed.data.public ?? post.public;
 
   if (slug !== post.slug) {
     const conflict = await db.post.findUnique({ where: { userId_slug: { userId, slug } } });
