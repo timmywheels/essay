@@ -3,7 +3,6 @@
     "cli": {
       "release-type": "go",
       "component": "cli",
-      "tag-name": "v${version}",
       "changelog-path": "cli/CHANGELOG.md"
     }
   },

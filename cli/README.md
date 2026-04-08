@@ -37,7 +37,7 @@ essay new                            # auto-generated slug
 essay new "On distributed systems"   # sets the title
 ```
 
-Saving and quitting the editor publishes the post.
+Saving and quitting the editor saves the post. Use `essay publish <slug>` to make it public.
 
 ### list
 
