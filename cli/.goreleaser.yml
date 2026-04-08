@@ -8,6 +8,7 @@ before:
 
 builds:
   - binary: essay
+    main: .
     ldflags:
       - -s -w
       - -X essay.sh/cli/cmd.GitHubClientID={{ .Env.ESSAY_GITHUB_CLIENT_ID }}
@@ -28,6 +29,8 @@ archives:
       - goos: windows
         formats: [zip]
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - none*
 
 checksum:
   name_template: "checksums.txt"
@@ -36,4 +39,3 @@ release:
   github:
     owner: timmywheels
     name: essay
-
