@@ -45,7 +45,7 @@ export default async function PostPage({ params }: { params: Promise<{ username:
         </div>
       </header>
 
-      <article className="text-sm leading-relaxed text-zinc-800 whitespace-pre-wrap">
+      <article className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
         {post.content}
       </article>
     </main>

@@ -23,17 +23,25 @@ export async function POST(req: NextRequest) {
   const ghUser = await ghRes.json();
   const githubUsername: string = ghUser.login;
 
-  const user = await db.user.findUnique({ where: { githubUsername } });
-  if (!user) {
-    return NextResponse.json({ error: "no account found — sign in at essay.sh first" }, { status: 404 });
-  }
+  const token = randomBytes(32).toString("hex");
+
+  const user = await db.user.upsert({
+    where: { githubUsername },
+    update: {},
+    create: {
+      githubUsername,
+      username: githubUsername,
+      name: ghUser.name ?? githubUsername,
+      email: ghUser.email ?? undefined,
+      image: ghUser.avatar_url ?? undefined,
+      cliToken: token,
+    },
+  });
 
   // Issue a CLI token if not already set
-  let token = user.cliToken;
-  if (!token) {
-    token = randomBytes(32).toString("hex");
+  if (!user.cliToken) {
     await db.user.update({ where: { id: user.id }, data: { cliToken: token } });
   }
 
-  return NextResponse.json({ token, username: user.username ?? githubUsername });
+  return NextResponse.json({ token: user.cliToken ?? token, username: user.username ?? githubUsername });
 }
