@@ -76,9 +76,11 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
           <ActivityCalendar publishedDates={calendarDates} username={username} posts={postsMap} />
         ) : (
           <div style={{ position: "relative" }}>
-            <ActivityCalendar publishedDates={generateDemoDates()} username={username} interactive={false} />
+            <div style={{ filter: "blur(2px)", opacity: 0.5 }}>
+              <ActivityCalendar publishedDates={generateDemoDates()} username={username} interactive={false} />
+            </div>
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-              <p style={{ fontSize: "12px", color: "var(--muted)" }}>nothing published yet</p>
+              <p style={{ fontSize: "13px", color: "var(--foreground)", letterSpacing: "0.02em" }}>nothing published yet</p>
             </div>
           </div>
         )}

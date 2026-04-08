@@ -36,7 +36,7 @@ const baseTheme = EditorView.theme({
   "&.cm-editor": { outline: "none", border: "none", background: "transparent" },
   "&.cm-editor.cm-focused": { outline: "none", border: "none" },
   ".cm-scroller": { background: "transparent" },
-  ".cm-content": { fontFamily: "var(--font-geist-mono)", padding: "0", minHeight: "60vh", caretColor: "var(--foreground)" },
+  ".cm-content": { fontFamily: "var(--font-geist-mono)", padding: "0 0 0 2px", minHeight: "60vh", caretColor: "var(--foreground)" },
   ".cm-focused": { outline: "none" },
   ".cm-line": { padding: "0", lineHeight: "1.75", color: "var(--foreground)" },
   ".cm-cursor": { borderLeftColor: "var(--foreground)" },
@@ -58,6 +58,7 @@ export default function Editor({ username, post }: Props) {
   const [isPublished, setIsPublished] = useState(post?.published ?? false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [vimMode, setVimMode] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("editor-vim-mode");
@@ -136,9 +137,9 @@ export default function Editor({ username, post }: Props) {
 
   // Vim ex commands
   useEffect(() => {
-    Vim.defineEx("write", "w", () => save(false));       // :w → save
-    Vim.defineEx("wquit", "wq", () => save(false).then(() => router.push("/dashboard"))); // :wq → save + exit
-  }, [save, router]);
+    Vim.defineEx("write", "w", () => save(false));
+    Vim.defineEx("wquit", "wq", () => save(false).then(() => router.push(`/${username}`)));
+  }, [save, router, username]);
 
   const extensions = [markdown(), baseTheme, EditorView.lineWrapping];
   if (vimMode) extensions.push(vim());
@@ -146,28 +147,11 @@ export default function Editor({ username, post }: Props) {
   return (
     <main className="max-w-2xl mx-auto px-6 py-12 space-y-8">
       <div className="flex items-center justify-between">
-        <Link href="/dashboard" className="text-xs transition-opacity hover:opacity-60" style={{ color: "var(--muted)" }}>
-          ← dashboard
+        <Link href={`/${username}`} className="text-xs transition-opacity hover:opacity-60" style={{ color: "var(--muted)" }}>
+          ← {username}
         </Link>
 
         <div className="flex items-center gap-5">
-          {/* Vim toggle */}
-          <button onClick={toggleVim} className="relative flex items-center gap-1.5 text-xs font-mono transition-opacity hover:opacity-60" style={{ color: "var(--muted)" }}>
-            vim
-            <AnimatePresence>
-              {vimMode && (
-                <motion.span
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="w-1 h-1 rounded-full inline-block"
-                  style={{ background: "var(--muted)" }}
-                />
-              )}
-            </AnimatePresence>
-          </button>
-
           {/* Visibility toggle */}
           <button
             onClick={() => setIsPublic((p) => !p)}
@@ -253,6 +237,58 @@ export default function Editor({ username, post }: Props) {
           />
         </div>
       </div>
+
+      {/* Settings menu — top right, left of theme toggle */}
+      <div className="fixed top-4 right-10 flex flex-col items-end">
+        <button
+          onClick={() => setMenuOpen((o) => !o)}
+          className="text-xs transition-opacity hover:opacity-60"
+          style={{ color: "var(--muted)", letterSpacing: "0.1em" }}
+        >
+          ···
+        </button>
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                border: "1px dashed var(--border)",
+                background: "var(--background)",
+                padding: "8px 12px",
+                marginTop: "8px",
+                minWidth: "120px",
+              }}
+            >
+              <button
+                onClick={toggleVim}
+                className="flex items-center justify-between w-full text-xs transition-opacity hover:opacity-60"
+                style={{ color: "var(--muted)" }}
+              >
+                <span className="font-mono">vim</span>
+                <AnimatePresence>
+                  {vimMode && (
+                    <motion.span
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: "var(--foreground)" }}
+                    />
+                  )}
+                </AnimatePresence>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {menuOpen && (
+        <div className="fixed inset-0" style={{ zIndex: -1 }} onClick={() => setMenuOpen(false)} />
+      )}
 
       <CodeMirror
         value={content}

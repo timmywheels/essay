@@ -37,7 +37,7 @@ if [ -z "$VERSION" ]; then
   exit 1
 fi
 
-FILENAME="${BIN}_${OS}_${ARCH}.tar.gz"
+FILENAME="\${BIN}_\${OS}_\${ARCH}.tar.gz"
 URL="https://github.com/$REPO/releases/download/$VERSION/$FILENAME"
 
 echo "Installing essay $VERSION ($OS/$ARCH)..."
