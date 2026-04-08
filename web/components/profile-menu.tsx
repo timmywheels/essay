@@ -200,13 +200,15 @@ const PANELS: Record<string, (props: PanelProps) => React.ReactNode> = {
 interface Props {
   initialDomain: string | null;
   initialVerifiedAt: string | null;
+  initialProfilePublic: boolean;
 }
 
-export function ProfileMenu({ initialDomain, initialVerifiedAt }: Props) {
+export function ProfileMenu({ initialDomain, initialVerifiedAt, initialProfilePublic }: Props) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<string | null>(null);
+  const [profilePublic, setProfilePublic] = useState(initialProfilePublic);
 
   useEffect(() => setMounted(true), []);
 
@@ -220,12 +222,27 @@ export function ProfileMenu({ initialDomain, initialVerifiedAt }: Props) {
     setTimeout(() => setPanel(null), 200);
   }
 
+  async function toggleProfilePublic() {
+    const next = !profilePublic;
+    setProfilePublic(next);
+    await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profilePublic: next }),
+    });
+  }
+
   const items: MenuItem[] = [
     {
       kind: "action",
       label: isDark ? "light mode" : "dark mode",
       icon: mounted ? (isDark ? <SunIcon width={13} height={13} /> : <MoonIcon width={13} height={13} />) : null,
       onSelect: () => setTheme(isDark ? "light" : "dark"),
+    },
+    {
+      kind: "action",
+      label: profilePublic ? "make profile private" : "make profile public",
+      onSelect: toggleProfilePublic,
     },
     {
       kind: "panel",

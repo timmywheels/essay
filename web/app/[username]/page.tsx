@@ -35,6 +35,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
   if (!user) notFound();
 
   const isOwner = session?.user?.id === user.id;
+  if (!user.profilePublic && !isOwner) notFound();
   const visiblePosts = isOwner ? user.posts : user.posts.filter((p) => p.published && p.public);
   const publishedPosts = user.posts.filter((p) => p.published && p.publishedAt);
   const publicPosts = publishedPosts.filter((p) => p.public);
@@ -142,6 +143,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
         <ProfileMenu
           initialDomain={user.customDomain ?? null}
           initialVerifiedAt={user.domainVerifiedAt?.toISOString() ?? null}
+          initialProfilePublic={user.profilePublic}
         />
       )}
     </main>

@@ -20,6 +20,7 @@ model User {
   cliToken             String?   @unique
   customDomain         String?   @unique
   domainVerifiedAt     DateTime?
+  profilePublic        Boolean   @default(true)
   createdAt            DateTime  @default(now())
   posts                Post[]
   accounts             Account[]
