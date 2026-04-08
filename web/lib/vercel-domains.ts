@@ -30,3 +30,12 @@ export async function getDomainVerification(domain: string) {
   );
   return res.json();
 }
+
+export async function getDomainConfig(domain: string): Promise<{ cnames: string[]; aValues: string[] }> {
+  const res = await fetch(`${BASE}/v6/domains/${encodeURIComponent(domain)}/config${teamQuery}`, { headers });
+  if (!res.ok) return { cnames: [], aValues: [] };
+  const data = await res.json();
+  const cnames = (data.recommendedCNAME ?? []).map((r: { value: string }) => r.value.replace(/\.$/, ""));
+  const aValues = (data.recommendedIPv4 ?? []).flatMap((r: { value: string[] }) => r.value);
+  return { cnames, aValues };
+}

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { ActivityCalendar } from "@/components/activity-calendar";
@@ -20,6 +21,8 @@ function generateDemoDates() {
 export default async function ProfilePage({ params, searchParams }: { params: Promise<{ username: string }>; searchParams: Promise<{ demo?: string }> }) {
   const { username } = await params;
   const { demo } = await searchParams;
+  const host = (await headers()).get("host") ?? "";
+  const isCustomDomain = host !== "essay.sh" && host !== "www.essay.sh" && !host.endsWith(".vercel.app") && !host.startsWith("localhost");
 
   const [session, user] = await Promise.all([
     auth(),
@@ -102,7 +105,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
             <li key={post.id} className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1 space-y-1">
                 <Link
-                  href={post.published ? `/${username}/${post.slug}` : `/dashboard/posts/${post.id}`}
+                  href={post.published ? (isCustomDomain ? `/${post.slug}` : `/${username}/${post.slug}`) : `/dashboard/posts/${post.id}`}
                   className="group"
                 >
                   <p className="text-sm font-medium group-hover:underline underline-offset-2" style={{ color: "var(--foreground)" }}>

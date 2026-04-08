@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -23,6 +24,9 @@ export default async function PostPage({ params }: { params: Promise<{ username:
   const post = await getPost(username, slug);
   if (!post) notFound();
 
+  const host = (await headers()).get("host") ?? "";
+  const isCustomDomain = host !== "essay.sh" && host !== "www.essay.sh" && !host.endsWith(".vercel.app") && !host.startsWith("localhost");
+
   return (
     <>
     <ThemeToggle />
@@ -30,7 +34,7 @@ export default async function PostPage({ params }: { params: Promise<{ username:
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold leading-snug">{post.title}</h1>
         <div className="flex items-center gap-2 text-xs text-zinc-400">
-          <Link href={`/${username}`} className="hover:underline underline-offset-2">
+          <Link href={isCustomDomain ? "/" : `/${username}`} className="hover:underline underline-offset-2">
             {username}
           </Link>
           {post.publishedAt && (
