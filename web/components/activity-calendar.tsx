@@ -9,6 +9,7 @@ const W = 1000;
 const H = 80;
 const FLOOR = H - 10;
 const CEIL = 8;
+const PAD = 90; // inset so edge data points land inside the mask's opaque zone (mask fades 0-8%)
 
 interface Props {
   publishedDates: Date[];
@@ -122,10 +123,17 @@ export function ActivityCalendar({ publishedDates, username, posts = {}, interac
     const t = i / (WEEKS - 1);
     const baseWobble = Math.sin(i * 0.45) * 3 + Math.sin(i * 0.9 + 1.2) * 1.5;
     const activity = (week.count / maxCount) * (FLOOR - CEIL);
-    return { x: t * W, y: FLOOR - baseWobble - activity };
+    return { x: PAD + t * (W - 2 * PAD), y: FLOOR - baseWobble - activity };
   });
 
-  const linePath = spline(wavePoints);
+  // Extend the spline to the container edges with phantom points so the fade
+  // has something to fade — the actual data points stay inset and hoverable.
+  const extendedPoints = [
+    { x: 0, y: wavePoints[0].y },
+    ...wavePoints,
+    { x: W, y: wavePoints[WEEKS - 1].y },
+  ];
+  const linePath = spline(extendedPoints);
   const areaPath = `${linePath} L ${W},${H} L 0,${H} Z`;
 
   const cursorX = hoveredWeek !== null ? wavePoints[hoveredWeek].x : null;
@@ -135,7 +143,9 @@ export function ActivityCalendar({ publishedDates, username, posts = {}, interac
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect) return;
     const rel = (e.clientX - rect.left) / rect.width;
-    setHoveredWeek(Math.max(0, Math.min(WEEKS - 1, Math.round(rel * (WEEKS - 1)))));
+    // Map from padded range [PAD/W .. (W-PAD)/W] → [0 .. WEEKS-1]
+    const adjustedRel = (rel - PAD / W) / (1 - (2 * PAD) / W);
+    setHoveredWeek(Math.max(0, Math.min(WEEKS - 1, Math.round(adjustedRel * (WEEKS - 1)))));
   }
 
   function handleClick() {

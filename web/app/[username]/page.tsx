@@ -49,7 +49,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
     db.user.findUnique({
       where: { username },
       include: {
-        posts: { orderBy: { createdAt: "desc" } },
+        posts: { orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }] },
         settings: true,
       },
     }),
