@@ -129,7 +129,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
           )}
         </div>
 
-        {hasPublished || demo != null ? (
+        {user.showActivityGraph && (hasPublished || demo != null ? (
           <div className="space-y-2">
             <ActivityCalendar publishedDates={calendarDates} username={username} posts={postsMap} />
           </div>
@@ -142,7 +142,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
               <p style={{ fontSize: "13px", color: "var(--foreground)", letterSpacing: "0.02em" }}>nothing published yet</p>
             </div>
           </div>
-        )}
+        ))}
       </header>
 
       {visiblePosts.length === 0 ? (

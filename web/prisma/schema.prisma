@@ -23,6 +23,7 @@ model User {
   bio                  String?
   profilePublic        Boolean   @default(true)
   showUsername         Boolean   @default(true)
+  showActivityGraph    Boolean   @default(true)
   links                Json?
   createdAt            DateTime  @default(now())
   posts                Post[]
@@ -65,12 +66,10 @@ model Session {
 model Post {
   id          String    @id @default(cuid())
   title       String
-  content     String    @db.Text
   slug        String
   published   Boolean   @default(false)
   public      Boolean   @default(true)
   publishedAt DateTime?
-  wordCount   Int       @default(0)
   views       Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

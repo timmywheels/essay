@@ -21,15 +21,17 @@ interface Props {
   initialLinks: LinkItem[];
   initialProfilePublic: boolean;
   initialShowUsername: boolean;
+  initialShowActivityGraph: boolean;
   username: string;
 }
 
-export function ProfileSettings({ initialName, initialBio, initialLinks, initialProfilePublic, initialShowUsername, username }: Props) {
+export function ProfileSettings({ initialName, initialBio, initialLinks, initialProfilePublic, initialShowUsername, initialShowActivityGraph, username }: Props) {
   const [name, setName] = useState(initialName);
   const [bio, setBio] = useState(initialBio);
   const [links, setLinks] = useState<LinkItem[]>(initialLinks.length ? initialLinks : []);
   const [profilePublic, setProfilePublic] = useState(initialProfilePublic);
   const [showUsername, setShowUsername] = useState(initialShowUsername);
+  const [showActivityGraph, setShowActivityGraph] = useState(initialShowActivityGraph);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
 
   async function save() {
@@ -165,6 +167,17 @@ export function ProfileSettings({ initialName, initialBio, initialLinks, initial
           />
           <p className="text-xs" style={{ color: "var(--muted)", opacity: 0.6 }}>
             {showUsername ? `@${username} is shown beneath your display name.` : "only your display name is shown on your profile."}
+          </p>
+        </div>
+
+        <div className="space-y-1">
+          <Toggle
+            checked={showActivityGraph}
+            onChange={(val) => { setShowActivityGraph(val); patch({ showActivityGraph: val }); }}
+            label="show activity graph"
+          />
+          <p className="text-xs" style={{ color: "var(--muted)", opacity: 0.6 }}>
+            {showActivityGraph ? "publishing history is shown on your profile." : "activity graph is hidden from your profile."}
           </p>
         </div>
       </div>

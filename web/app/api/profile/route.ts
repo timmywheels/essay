@@ -6,8 +6,9 @@ import { db } from "@/lib/db";
 const schema = z.object({
   name:          z.string().trim().optional().nullable(),
   bio:           z.string().trim().max(280).optional().nullable(),
-  profilePublic: z.boolean().optional(),
-  showUsername:  z.boolean().optional(),
+  profilePublic:     z.boolean().optional(),
+  showUsername:      z.boolean().optional(),
+  showActivityGraph: z.boolean().optional(),
   links:         z.array(z.object({ label: z.string(), url: z.string().url() })).max(5).optional(),
 });
 

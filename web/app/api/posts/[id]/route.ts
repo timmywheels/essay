@@ -3,11 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { resolveUser } from "@/lib/cli-auth";
-import { getInstallationOctokit, buildMarkdown, writePostToGitHub, deletePostFromGitHub } from "@/lib/github";
-
-function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length;
-}
+import { getInstallationOctokit, buildMarkdown, writePostToGitHub, deletePostFromGitHub, getPostContent } from "@/lib/github";
 
 const patchSchema = z.object({
   title: z.string().optional(),
@@ -25,7 +21,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const post = await db.post.findUnique({ where: { id } });
   if (!post || post.userId !== resolved.userId) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  return NextResponse.json(post);
+  // Fetch content from GitHub
+  const { user } = resolved;
+  let content: string | null = null;
+  if (user.githubInstallationId && user.githubRepo && user.githubUsername) {
+    const octokit = await getInstallationOctokit(user.githubInstallationId);
+    content = await getPostContent(octokit, user.githubUsername, user.githubRepo, post.slug);
+  }
+
+  return NextResponse.json({ ...post, content });
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -46,7 +50,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const title = parsed.data.title ?? post.title;
-  const content = parsed.data.content ?? post.content;
   const slug = parsed.data.slug ?? post.slug;
   const published = parsed.data.published ?? post.published;
   const isPublic = parsed.data.public ?? post.public;
@@ -59,6 +62,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const publishedAt = published && !post.publishedAt ? new Date() : post.publishedAt;
   const octokit = await getInstallationOctokit(user.githubInstallationId);
 
+  // Fetch current content from GitHub to preserve it if not updating
+  let content = parsed.data.content ?? null;
+  if (!content) {
+    content = await getPostContent(octokit, user.githubUsername, user.githubRepo, post.slug) ?? "";
+  }
+
   if (slug !== post.slug) {
     await deletePostFromGitHub(octokit, user.githubUsername, user.githubRepo, post.slug);
   }
@@ -68,7 +77,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const updated = await db.post.update({
     where: { id },
-    data: { title, content, slug, published: !!published, public: !!isPublic, publishedAt, wordCount: countWords(content) },
+    data: { title, slug, published: !!published, public: !!isPublic, publishedAt },
   });
 
   revalidatePath(`/${user.username}/${slug}`);

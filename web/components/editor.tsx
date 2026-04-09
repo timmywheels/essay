@@ -3,12 +3,13 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useTheme } from "@/components/theme-provider";
+import { AppMenu, AppMenuItem } from "@/components/app-menu";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
 import { vim, Vim } from "@replit/codemirror-vim";
 import { markdown } from "@codemirror/lang-markdown";
 import { uniqueNamesGenerator, adjectives, animals } from "unique-names-generator";
 import { motion, AnimatePresence } from "motion/react";
+import { LockClosedIcon } from "@radix-ui/react-icons";
 
 type Post = {
   id: string;
@@ -47,7 +48,7 @@ const baseTheme = EditorView.theme({
   ".cm-placeholder": { color: "var(--muted)" },
 });
 
-type SaveState = "idle" | "saving" | "saved" | "publishing";
+type SaveState = "idle" | "committing" | "pushing";
 
 export default function Editor({ username, post }: Props) {
   const router = useRouter();
@@ -59,10 +60,6 @@ export default function Editor({ username, post }: Props) {
   const [isPublished, setIsPublished] = useState(post?.published ?? false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [vimMode, setVimMode] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const stored = localStorage.getItem("editor-vim-mode");
@@ -89,36 +86,39 @@ export default function Editor({ username, post }: Props) {
 
   const save = useCallback(async (publish: boolean) => {
     if (saveState !== "idle") return;
-    setSaveState(publish ? "publishing" : "saving");
+    setSaveState(publish ? "pushing" : "committing");
 
-    const res = await fetch(post ? `/api/posts/${post.id}` : "/api/posts", {
-      method: post ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, content, slug, published: publish || isPublished, public: isPublic }),
-    });
+    try {
+      const res = await fetch(post ? `/api/posts/${post.id}` : "/api/posts", {
+        method: post ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, content, slug, published: publish || isPublished, public: isPublic }),
+      });
 
-    if (!res.ok) {
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Something went wrong.");
+        return;
+      }
+
       const data = await res.json();
+
+      if (!post) {
+        router.push(`/${username}/${slug}`);
+        return;
+      }
+
+      if (publish) {
+        setIsPublished(true);
+        router.push(isPublic ? `/${username}/${slug}` : `/${username}`);
+        return;
+      }
+
+    } catch {
+      alert("Network error. Please try again.");
+    } finally {
       setSaveState("idle");
-      alert(data.error || "Something went wrong.");
-      return;
     }
-
-    const data = await res.json();
-
-    if (!post) {
-      router.push(`/dashboard/posts/${data.id}`);
-      return;
-    }
-
-    if (publish) {
-      setIsPublished(true);
-      router.push(isPublic ? `/${username}/${slug}` : `/${username}`);
-      return;
-    }
-
-    setSaveState("saved");
-    setTimeout(() => setSaveState("idle"), 1800);
   }, [saveState, post, title, content, slug, isPublished, isPublic, username, router]);
 
   // Keyboard shortcuts
@@ -128,11 +128,11 @@ export default function Editor({ username, post }: Props) {
       if (!mod) return;
       if (e.key === "s") {
         e.preventDefault();
-        save(e.shiftKey); // ⌘S → save, ⌘⇧S → publish
+        save(e.shiftKey); // ⌘S → commit, ⌘⇧S → push
       }
       if (e.key === "Enter") {
         e.preventDefault();
-        save(true); // ⌘↵ → publish
+        save(true); // ⌘↵ → push
       }
     };
     window.addEventListener("keydown", handler);
@@ -159,63 +159,31 @@ export default function Editor({ username, post }: Props) {
           {/* Visibility toggle */}
           <button
             onClick={() => setIsPublic((p) => !p)}
-            className="relative text-xs transition-opacity hover:opacity-60 overflow-hidden"
+            className="flex items-center gap-1 text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60"
             style={{ color: "var(--muted)" }}
           >
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.span
-                key={isPublic ? "public" : "private"}
-                initial={{ y: 6, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -6, opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="block"
-              >
-                {isPublic ? "public" : "private"}
-              </motion.span>
-            </AnimatePresence>
+            {!isPublic && <LockClosedIcon width={10} height={10} />}
+            {isPublic ? "public" : "private"}
           </button>
 
-          {/* Save */}
+          {/* Commit */}
           <button
             onClick={() => save(false)}
             disabled={saveState !== "idle"}
-            className="relative text-xs underline decoration-dotted underline-offset-2 disabled:opacity-50 transition-opacity hover:opacity-60 overflow-hidden"
-            style={{ color: "var(--muted)" }}
+            className={`text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60 ${saveState === "committing" ? "text-shimmer" : ""}`}
+            style={saveState === "committing" ? undefined : { color: "var(--muted)" }}
           >
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.span
-                key={saveState === "saved" ? "saved" : "save"}
-                initial={{ y: 6, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -6, opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="block"
-              >
-                {saveState === "saving" ? "saving…" : saveState === "saved" ? "saved" : "save"}
-              </motion.span>
-            </AnimatePresence>
+            commit
           </button>
 
-          {/* Publish */}
+          {/* Push */}
           <button
             onClick={() => save(true)}
             disabled={saveState !== "idle" || !slug}
-            className="relative text-xs disabled:opacity-30 transition-opacity hover:opacity-60 overflow-hidden"
-            style={{ color: "var(--foreground)" }}
+            className={`text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60 ${saveState === "pushing" ? "text-shimmer" : ""}`}
+            style={saveState === "pushing" ? undefined : { color: "var(--muted)" }}
           >
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.span
-                key={saveState === "publishing" ? "ing" : isPublished ? "update" : "publish"}
-                initial={{ y: 6, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -6, opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="block"
-              >
-                {saveState === "publishing" ? "publishing…" : isPublished ? "update" : "publish"}
-              </motion.span>
-            </AnimatePresence>
+            push
           </button>
         </div>
       </div>
@@ -242,64 +210,11 @@ export default function Editor({ username, post }: Props) {
         </div>
       </div>
 
-      {/* Settings menu — top right, left of theme toggle */}
-      <div className="fixed top-4 right-10 flex flex-col items-end">
-        <button
-          onClick={() => setMenuOpen((o) => !o)}
-          className="text-xs transition-opacity hover:opacity-60"
-          style={{ color: "var(--muted)", letterSpacing: "0.1em" }}
-        >
-          ···
-        </button>
-        <AnimatePresence>
-          {menuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.15 }}
-              style={{
-                border: "1px dashed var(--border)",
-                background: "var(--background)",
-                padding: "8px 12px",
-                marginTop: "8px",
-                minWidth: "120px",
-              }}
-            >
-              <button
-                onClick={() => mounted && setTheme(theme === "dark" ? "light" : "dark")}
-                className="flex items-center justify-between w-full text-xs transition-opacity hover:opacity-60"
-                style={{ color: "var(--muted)" }}
-              >
-                <span>{mounted && theme === "dark" ? "light mode" : "dark mode"}</span>
-              </button>
-              <button
-                onClick={toggleVim}
-                className="flex items-center justify-between w-full text-xs transition-opacity hover:opacity-60"
-                style={{ color: "var(--muted)" }}
-              >
-                <span className="font-mono">vim</span>
-                <AnimatePresence>
-                  {vimMode && (
-                    <motion.span
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0, opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: "var(--foreground)" }}
-                    />
-                  )}
-                </AnimatePresence>
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {menuOpen && (
-        <div className="fixed inset-0" style={{ zIndex: -1 }} onClick={() => setMenuOpen(false)} />
-      )}
+      <AppMenu>
+        <AppMenuItem onClick={toggleVim} indicator={vimMode}>
+          <span className="font-mono">vim</span>
+        </AppMenuItem>
+      </AppMenu>
 
       <CodeMirror
         value={content}

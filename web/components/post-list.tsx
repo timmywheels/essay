@@ -45,7 +45,7 @@ export function PostList({ posts, isOwner, isCustomDomain, username }: Props) {
         const showYear = year !== null && year !== prevYear;
         const href = post.published
           ? (isCustomDomain ? `/${post.slug}` : `/${username}/${post.slug}`)
-          : `/dashboard/posts/${post.id}`;
+          : `/${username}/${post.slug}`;
 
         return (
           <li
@@ -70,7 +70,7 @@ export function PostList({ posts, isOwner, isCustomDomain, username }: Props) {
                 {post.published && <span>{post.views.toLocaleString()}</span>}
                 {isOwner && (
                   <div className="flex items-center gap-3">
-                    <Link href={`/dashboard/posts/${post.id}`} className="hover:opacity-60">edit</Link>
+                    <Link href={`/${username}/${post.slug}`} className="hover:opacity-60">edit</Link>
                     <DeletePostButton postId={post.id} />
                   </div>
                 )}

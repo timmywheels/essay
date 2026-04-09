@@ -5,10 +5,6 @@ import { resolveUser } from "@/lib/cli-auth";
 import { getInstallationOctokit, buildMarkdown, writePostToGitHub } from "@/lib/github";
 import { uniqueNamesGenerator, adjectives, animals } from "unique-names-generator";
 
-function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length;
-}
-
 const createSchema = z.object({
   title: z.string(),
   content: z.string(),
@@ -51,9 +47,7 @@ export async function POST(req: Request) {
     length: 2,
   });
 
-  const conflict = await db.post.findUnique({
-    where: { userId_slug: { userId, slug } },
-  });
+  const conflict = await db.post.findUnique({ where: { userId_slug: { userId, slug } } });
   if (conflict) return NextResponse.json({ error: "Slug already in use." }, { status: 409 });
 
   const publishedAt = published ? new Date() : null;
@@ -63,14 +57,7 @@ export async function POST(req: Request) {
   await writePostToGitHub(octokit, user.githubUsername, user.githubRepo, slug, markdown, title);
 
   const post = await db.post.create({
-    data: {
-      title, content, slug,
-      published: !!published,
-      public: isPublic !== false,
-      publishedAt,
-      wordCount: countWords(content),
-      userId,
-    },
+    data: { title, slug, published: !!published, public: isPublic !== false, publishedAt, userId },
   });
 
   return NextResponse.json(post, { status: 201 });

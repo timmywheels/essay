@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 
 const WEEKS = 52;
@@ -20,6 +21,54 @@ interface WeekData {
   count: number;
   startDate: Date;
   postLinks: { title: string; slug: string }[];
+}
+
+function MorePopover({ posts, username }: { posts: { title: string; slug: string }[]; username: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span style={{ position: "relative" }}>
+      <button
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        style={{ fontSize: "11px", color: "var(--muted)" }}
+      >
+        +{posts.length} more
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.15 }}
+            onMouseEnter={() => setOpen(true)}
+            onMouseLeave={() => setOpen(false)}
+            style={{
+              position: "absolute",
+              bottom: "calc(100% + 6px)",
+              left: 0,
+              border: "1px dashed var(--border)",
+              background: "var(--background)",
+              padding: "6px 0",
+              minWidth: "160px",
+              zIndex: 50,
+            }}
+          >
+            {posts.map((p, i) => (
+              <Link
+                key={i}
+                href={`/${username}/${p.slug}`}
+                style={{ display: "block", padding: "6px 16px", fontSize: "11px", color: "var(--foreground)", textDecoration: "none" }}
+                className="hover:opacity-60 transition-opacity"
+              >
+                {p.title}
+              </Link>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </span>
+  );
 }
 
 function spline(pts: { x: number; y: number }[]): string {
@@ -165,7 +214,7 @@ export function ActivityCalendar({ publishedDates, username, posts = {}, interac
       </svg>
       </div>
 
-      <div style={{ height: interactive ? "20px" : 0, marginTop: interactive ? "8px" : 0, overflow: "hidden" }}>
+      <div style={{ height: interactive ? "20px" : 0, marginTop: interactive ? "8px" : 0, overflow: interactive ? "visible" : "hidden" }}>
         <AnimatePresence mode="wait">
           {hoveredWeek !== null && (
             <motion.div
@@ -176,10 +225,10 @@ export function ActivityCalendar({ publishedDates, username, posts = {}, interac
               transition={{ duration: 0.1 }}
               style={{ display: "flex", alignItems: "baseline", gap: "10px" }}
             >
-              <span style={{ fontSize: "11px", color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>
+              <span style={{ fontSize: "11px", color: "var(--muted)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                 {weeks[hoveredWeek].startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
               </span>
-              {weeks[hoveredWeek].postLinks.map((p, i) => (
+              {weeks[hoveredWeek].postLinks.slice(0, 2).map((p, i) => (
                 <a
                   key={i}
                   href={`/${username}/${p.slug}`}
@@ -189,11 +238,18 @@ export function ActivityCalendar({ publishedDates, username, posts = {}, interac
                     textDecoration: "underline",
                     textDecorationStyle: "dotted",
                     textUnderlineOffset: "3px",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {p.title}
                 </a>
               ))}
+              {weeks[hoveredWeek].postLinks.length > 2 && (
+                <MorePopover
+                  posts={weeks[hoveredWeek].postLinks.slice(2)}
+                  username={username}
+                />
+              )}
             </motion.div>
           )}
         </AnimatePresence>

@@ -71,6 +71,23 @@ export async function writePostToGitHub(
   });
 }
 
+export async function getPostContent(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  slug: string,
+): Promise<string | null> {
+  try {
+    const { data } = await octokit.repos.getContent({ owner, repo, path: `posts/${slug}.md` });
+    const raw = Buffer.from((data as { content: string }).content, "base64").toString("utf-8");
+    // Strip YAML frontmatter
+    const match = raw.match(/^---\n[\s\S]*?\n---\n\n?([\s\S]*)$/);
+    return match ? match[1].trim() : raw.trim();
+  } catch {
+    return null;
+  }
+}
+
 export async function deletePostFromGitHub(
   octokit: Octokit,
   owner: string,
