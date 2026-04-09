@@ -11,6 +11,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     GitHub({
       authorization: { params: { scope: "read:user user:email" } },
+      issuer: "https://github.com/login/oauth",
     }),
   ],
   callbacks: {
