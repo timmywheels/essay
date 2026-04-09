@@ -10,46 +10,51 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen" style={{ color: "var(--foreground)" }}>
-      <ThemeToggle />
-
       {/* ── Nav ── */}
-      <nav style={{ borderBottom: "1px dashed var(--border)" }}>
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+      <nav className="sticky top-0 z-50" style={{ borderBottom: "1px dashed var(--border)", background: "var(--background)" }}>
+        <div className="max-w-4xl mx-auto px-6 flex items-stretch justify-between" style={{ height: "52px" }}>
           <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-70">
             <TextSelectIcon size={16} color="var(--foreground)" />
             <span className="text-sm font-medium">essay.sh</span>
           </Link>
-          <div className="flex items-center gap-0 pr-8">
+          <div className="flex items-stretch">
+            {/* vertical divider */}
+            <div className="self-stretch" style={{ width: "1px", borderRight: "1px dashed var(--border)" }} />
             {session ? (
               <Link
                 href="/dashboard"
-                className="text-xs px-4 py-2 transition-opacity hover:opacity-70"
-                style={{ borderRight: "1px dashed var(--border)", color: "var(--muted)" }}
+                className="flex items-center text-xs px-5 transition-opacity hover:opacity-70"
+                style={{ color: "var(--muted)" }}
               >
                 dashboard
               </Link>
             ) : (
-              <form action={async () => { "use server"; await signIn("github"); }}>
+              <form className="flex items-stretch" action={async () => { "use server"; await signIn("github"); }}>
                 <button
                   type="submit"
-                  className="flex items-center gap-2 text-xs px-4 py-2 transition-opacity hover:opacity-70"
-                  style={{ borderRight: "1px dashed var(--border)", color: "var(--muted)" }}
+                  className="flex items-center gap-2 text-xs px-5 transition-opacity hover:opacity-70"
+                  style={{ color: "var(--muted)" }}
                 >
                   <GitHubLogoIcon width={12} height={12} />
                   sign in
                 </button>
               </form>
             )}
+            {/* vertical divider */}
+            <div className="self-stretch" style={{ width: "1px", borderRight: "1px dashed var(--border)" }} />
             <a
               href="https://github.com/timmywheels/essay/releases/latest"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-xs px-4 py-2 transition-opacity hover:opacity-70"
+              className="flex items-center gap-2 text-xs px-5 transition-opacity hover:opacity-70"
               style={{ color: "var(--muted)" }}
             >
               <DownloadIcon width={12} height={12} />
               download cli
             </a>
+            {/* vertical divider */}
+            <div className="self-stretch" style={{ width: "1px", borderRight: "1px dashed var(--border)" }} />
+            <ThemeToggle className="flex items-center px-4 transition-opacity hover:opacity-60" />
           </div>
         </div>
       </nav>

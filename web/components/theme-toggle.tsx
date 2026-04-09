@@ -4,7 +4,7 @@ import { useTheme } from "@/components/theme-provider";
 import { useEffect, useState } from "react";
 import { SunIcon, MoonIcon } from "@radix-ui/react-icons";
 
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -15,7 +15,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="fixed top-4 right-4 transition-opacity hover:opacity-60"
+      className={className ?? "fixed top-4 right-4 transition-opacity hover:opacity-60"}
       style={{ color: "var(--muted)" }}
       aria-label="Toggle theme"
     >
