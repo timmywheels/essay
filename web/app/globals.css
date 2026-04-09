@@ -5,6 +5,7 @@
     --foreground: #1a1a1a;
     --muted: #888880;
     --border: #c8c7c0;
+    color-scheme: light;
 }
 
 .dark {
@@ -12,6 +13,7 @@
     --foreground: #e8e7e0;
     --muted: #666660;
     --border: #333330;
+    color-scheme: dark;
 }
 
 @theme inline {
@@ -19,6 +21,10 @@
     --color-foreground: var(--foreground);
     --font-sans: var(--font-geist-sans);
     --font-mono: var(--font-geist-mono);
+}
+
+html {
+    background: var(--background);
 }
 
 body {

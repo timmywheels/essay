@@ -10,6 +10,7 @@ import { markdown } from "@codemirror/lang-markdown";
 import { uniqueNamesGenerator, adjectives, animals } from "unique-names-generator";
 import { motion, AnimatePresence } from "motion/react";
 import { LockClosedIcon } from "@radix-ui/react-icons";
+import { Markdown } from "@/components/markdown";
 
 type Post = {
   id: string;
@@ -60,6 +61,7 @@ export default function Editor({ username, post }: Props) {
   const [isPublished, setIsPublished] = useState(post?.published ?? false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [vimMode, setVimMode] = useState(false);
+  const [preview, setPreview] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("editor-vim-mode");
@@ -134,6 +136,10 @@ export default function Editor({ username, post }: Props) {
         e.preventDefault();
         save(true); // ⌘↵ → push
       }
+      if (e.key === "p") {
+        e.preventDefault();
+        setPreview((p) => !p); // ⌘P → toggle preview
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -156,6 +162,14 @@ export default function Editor({ username, post }: Props) {
         </Link>
 
         <div className="flex items-center gap-5">
+          {/* Preview toggle */}
+          <button
+            onClick={() => setPreview((p) => !p)}
+            className="text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60"
+            style={{ color: "var(--muted)" }}
+          >
+            {preview ? "edit" : "preview"}
+          </button>
           {/* Visibility toggle */}
           <button
             onClick={() => setIsPublic((p) => !p)}
@@ -188,54 +202,67 @@ export default function Editor({ username, post }: Props) {
         </div>
       </div>
 
-      <div className="space-y-3">
-        <input
-          type="text"
-          value={title}
-          onChange={handleTitleChange}
-          placeholder="Title"
-          className="w-full text-2xl font-semibold outline-none border-none bg-transparent"
-          style={{ color: "var(--foreground)" }}
-        />
-        <div className="flex items-center gap-1 text-sm" style={{ color: "var(--muted)" }}>
-          <span>essay.sh/{username}/</span>
-          <input
-            type="text"
-            value={slug}
-            onChange={handleSlugChange}
-            placeholder="slug"
-            className="flex-1 outline-none bg-transparent"
-            style={{ color: "var(--muted)" }}
+      {preview ? (
+        <>
+          <div>
+            <h1 className="text-2xl font-semibold leading-snug" style={{ color: "var(--foreground)" }}>
+              {title || <span style={{ color: "var(--muted)" }}>Untitled</span>}
+            </h1>
+          </div>
+          <Markdown content={content} />
+        </>
+      ) : (
+        <>
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={title}
+              onChange={handleTitleChange}
+              placeholder="Title"
+              className="w-full text-2xl font-semibold outline-none border-none bg-transparent"
+              style={{ color: "var(--foreground)" }}
+            />
+            <div className="flex items-center gap-1 text-sm" style={{ color: "var(--muted)" }}>
+              <span>essay.sh/{username}/</span>
+              <input
+                type="text"
+                value={slug}
+                onChange={handleSlugChange}
+                placeholder="slug"
+                className="flex-1 outline-none bg-transparent"
+                style={{ color: "var(--muted)" }}
+              />
+            </div>
+          </div>
+
+          <AppMenu>
+            <AppMenuItem onClick={toggleVim} indicator={vimMode}>
+              <span className="font-mono">vim</span>
+            </AppMenuItem>
+          </AppMenu>
+
+          <CodeMirror
+            value={content}
+            onChange={setContent}
+            extensions={extensions}
+            placeholder="Write something..."
+            basicSetup={{
+              lineNumbers: false,
+              foldGutter: false,
+              dropCursor: false,
+              allowMultipleSelections: false,
+              indentOnInput: false,
+              bracketMatching: false,
+              closeBrackets: false,
+              autocompletion: false,
+              highlightActiveLine: false,
+              highlightSelectionMatches: false,
+              searchKeymap: false,
+              syntaxHighlighting: false,
+            }}
           />
-        </div>
-      </div>
-
-      <AppMenu>
-        <AppMenuItem onClick={toggleVim} indicator={vimMode}>
-          <span className="font-mono">vim</span>
-        </AppMenuItem>
-      </AppMenu>
-
-      <CodeMirror
-        value={content}
-        onChange={setContent}
-        extensions={extensions}
-        placeholder="Write something..."
-        basicSetup={{
-          lineNumbers: false,
-          foldGutter: false,
-          dropCursor: false,
-          allowMultipleSelections: false,
-          indentOnInput: false,
-          bracketMatching: false,
-          closeBrackets: false,
-          autocompletion: false,
-          highlightActiveLine: false,
-          highlightSelectionMatches: false,
-          searchKeymap: false,
-          syntaxHighlighting: false,
-        }}
-      />
+        </>
+      )}
     </main>
   );
 }

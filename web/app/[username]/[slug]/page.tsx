@@ -8,6 +8,8 @@ import { db } from "@/lib/db";
 import { getInstallationOctokit, getPostContent } from "@/lib/github";
 import { EssayBadge } from "@/components/essay-badge";
 import { PostNav } from "@/components/post-nav";
+import { PostSpinner } from "@/components/post-spinner";
+import { StreamingMarkdown } from "@/components/streaming-markdown";
 import { AppMenu, AppMenuItem } from "@/components/app-menu";
 import Editor from "@/components/editor";
 
@@ -24,25 +26,8 @@ function timeAgo(date: Date): string {
   return "today";
 }
 
-const SKELETON_LINES = [[68, 72, 61, 38], [70, 64, 72, 67, 29], [66, 58, 43]];
-
 function ContentSkeleton() {
-  return (
-    <div className="space-y-6" style={{ fontFamily: "var(--font-geist-mono)", overflowX: "hidden" }}>
-      {SKELETON_LINES.map((lines, pi) => (
-        <div key={pi} className="space-y-1.5">
-          {lines.map((len, li) => (
-            <div
-              key={li}
-              style={{ color: "var(--border)", opacity: 0.55, whiteSpace: "nowrap", fontSize: "13px", lineHeight: "1.75" }}
-            >
-              {"─".repeat(len)}
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
+  return <PostSpinner />;
 }
 
 async function GitHubContent({
@@ -58,11 +43,9 @@ async function GitHubContent({
 }) {
   const octokit = await getInstallationOctokit(installationId);
   const content = await getPostContent(octokit, githubUsername, githubRepo, slug);
-  return (
-    <article className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
-      {content ?? <span style={{ color: "var(--muted)" }}>content unavailable</span>}
-    </article>
-  );
+  return content
+    ? <StreamingMarkdown content={content} />
+    : <p className="text-sm" style={{ color: "var(--muted)" }}>content unavailable</p>;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string; slug: string }> }) {
