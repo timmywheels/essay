@@ -51,7 +51,7 @@ export function PostList({ posts, isOwner, isCustomDomain, username }: Props) {
           <li
             key={post.id}
             id={`post-${post.slug}`}
-            className="flex items-baseline gap-4"
+            className="group flex items-baseline gap-4"
             style={{
               opacity: highlightedSlug && post.slug !== highlightedSlug ? 0.2 : 1,
               transition: "opacity 0.5s ease",
@@ -67,13 +67,13 @@ export function PostList({ posts, isOwner, isCustomDomain, username }: Props) {
                 {!post.published && <span className="ml-2 text-xs" style={{ color: "var(--muted)" }}>draft</span>}
               </Link>
               <div className="flex items-center gap-3 shrink-0 text-xs tabular-nums" style={{ color: "var(--muted)" }}>
-                {post.published && <span>{post.views.toLocaleString()}</span>}
                 {isOwner && (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Link href={`/${username}/${post.slug}`} className="hover:opacity-60">edit</Link>
                     <DeletePostButton postId={post.id} />
                   </div>
                 )}
+                {post.published && <span>{post.views.toLocaleString()}</span>}
               </div>
             </div>
           </li>

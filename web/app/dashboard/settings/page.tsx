@@ -13,19 +13,14 @@ export default async function SettingsPage() {
     where: { id: session.user.id },
     select: {
       name: true,
-      bio: true,
       username: true,
-      links: true,
-      profilePublic: true,
-      showUsername: true,
-      showActivityGraph: true,
-      theme: true,
-      customDomain: true,
-      domainVerifiedAt: true,
+      settings: true,
     },
   });
 
   if (!user) redirect("/");
+
+  const s = user.settings;
 
   return (
     <main className="max-w-2xl mx-auto px-6 py-12 space-y-12">
@@ -36,18 +31,18 @@ export default async function SettingsPage() {
 
       <ProfileSettings
         initialName={user.name ?? ""}
-        initialBio={user.bio ?? ""}
-        initialLinks={(user.links as { label: string; url: string }[]) ?? []}
-        initialProfilePublic={user.profilePublic}
-        initialShowUsername={user.showUsername}
-        initialShowActivityGraph={user.showActivityGraph}
-        initialTheme={user.theme}
+        initialBio={s?.bio ?? ""}
+        initialLinks={(s?.links as { label: string; url: string }[]) ?? []}
+        initialProfilePublic={s?.profilePublic ?? true}
+        initialShowUsername={s?.showUsername ?? true}
+        initialShowActivityGraph={s?.showActivityGraph ?? true}
+        initialTheme={s?.theme ?? "default"}
         username={user.username ?? ""}
       />
 
       <DomainSettings
-        initialDomain={user.customDomain ?? null}
-        initialVerifiedAt={user.domainVerifiedAt?.toISOString() ?? null}
+        initialDomain={s?.customDomain ?? null}
+        initialVerifiedAt={s?.domainVerifiedAt?.toISOString() ?? null}
       />
 
       {/* Account — always at the bottom */}

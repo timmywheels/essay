@@ -8,39 +8,48 @@ datasource db {
 }
 
 model User {
-  id                   String    @id @default(cuid())
+  id                   String        @id @default(cuid())
   name                 String?
-  email                String?   @unique
-  emailVerified        DateTime?
+  email                String?       @unique
+  emailVerified        DateTime?     @map("email_verified")
   image                String?
-  username             String?   @unique
-  githubUsername       String?   @unique
-  githubInstallationId String?
-  githubRepo           String?
-  cliToken             String?   @unique
-  customDomain         String?   @unique
-  domainVerifiedAt     DateTime?
-  bio                  String?
-  profilePublic        Boolean   @default(true)
-  showUsername         Boolean   @default(true)
-  showActivityGraph    Boolean   @default(true)
-  theme                String    @default("default")
-  links                Json?
-  createdAt            DateTime  @default(now())
+  username             String?       @unique
+  githubUsername       String?       @unique @map("github_username")
+  githubInstallationId String?       @map("github_installation_id")
+  githubRepo           String?       @map("github_repo")
+  cliToken             String?       @unique @map("cli_token")
+  createdAt            DateTime      @default(now()) @map("created_at")
   posts                Post[]
   accounts             Account[]
   sessions             Session[]
+  settings             UserSettings?
+
+  @@map("users")
+}
+
+model UserSettings {
+  id                String    @id @default(cuid())
+  userId            String    @unique @map("user_id")
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio               String?
+  profilePublic     Boolean   @default(true) @map("profile_public")
+  showUsername      Boolean   @default(true) @map("show_username")
+  showActivityGraph Boolean   @default(true) @map("show_activity_graph")
+  theme             String    @default("default")
+  links             Json?
+  customDomain      String?   @unique @map("custom_domain")
+  domainVerifiedAt  DateTime? @map("domain_verified_at")
 
   @@index([customDomain])
-  @@map("users")
+  @@map("user_settings")
 }
 
 model Account {
   id                String  @id @default(cuid())
-  userId            String
+  userId            String  @map("user_id")
   type              String
   provider          String
-  providerAccountId String
+  providerAccountId String  @map("provider_account_id")
   refresh_token     String? @db.Text
   access_token      String? @db.Text
   expires_at        Int?
@@ -56,8 +65,8 @@ model Account {
 
 model Session {
   id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -70,11 +79,11 @@ model Post {
   slug        String
   published   Boolean   @default(false)
   public      Boolean   @default(true)
-  publishedAt DateTime?
+  publishedAt DateTime? @map("published_at")
   views       Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  userId      String
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  userId      String    @map("user_id")
   user        User      @relation(fields: [userId], references: [id])
 
   @@unique([userId, slug])

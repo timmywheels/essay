@@ -25,13 +25,16 @@ function generateDemoDates() {
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
-  const user = await db.user.findUnique({ where: { username }, select: { name: true, bio: true, profilePublic: true } });
-  if (!user?.profilePublic) return {};
+  const user = await db.user.findUnique({
+    where: { username },
+    select: { name: true, settings: { select: { bio: true, profilePublic: true } } },
+  });
+  if (!user?.settings?.profilePublic) return {};
   const displayName = user.name || username;
   return {
     title: displayName,
-    description: user.bio || `Essays by ${displayName}.`,
-    openGraph: { title: displayName, description: user.bio || `Essays by ${displayName}.` },
+    description: user.settings.bio || `Essays by ${displayName}.`,
+    openGraph: { title: displayName, description: user.settings.bio || `Essays by ${displayName}.` },
   };
 }
 
@@ -45,14 +48,18 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
     auth(),
     db.user.findUnique({
       where: { username },
-      include: { posts: { orderBy: { createdAt: "desc" } } },
+      include: {
+        posts: { orderBy: { createdAt: "desc" } },
+        settings: true,
+      },
     }),
   ]);
 
   if (!user) notFound();
 
+  const s = user.settings;
   const isOwner = session?.user?.id === user.id;
-  if (!user.profilePublic && !isOwner) notFound();
+  if (!s?.profilePublic && !isOwner) notFound();
 
   const visiblePosts = isOwner ? user.posts : user.posts.filter((p) => p.published && p.public);
   const publishedPosts = user.posts.filter((p) => p.published && p.publishedAt);
@@ -60,15 +67,15 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
   const hasPublished = publicPosts.length > 0;
   const displayName = user.name || username;
 
-  if (user.theme === "pg") {
+  if (s?.theme === "pg") {
     const pgPosts = [...visiblePosts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return (
       <PgProfilePage
         username={username}
         isCustomDomain={isCustomDomain}
-        links={(user.links as LinkItem[]) ?? []}
+        links={(s.links as LinkItem[]) ?? []}
         displayName={displayName}
-        bio={user.bio}
+        bio={s.bio}
         posts={pgPosts}
         isOwner={isOwner}
       />
@@ -101,14 +108,14 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
         <header className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              {(user.name || user.showUsername) && (
+              {(user.name || s?.showUsername) && (
                 <h1 className="text-xl font-semibold" style={{ color: "var(--heading)" }}>{user.name || username}</h1>
               )}
-              {user.name && user.showUsername && <p className="text-xs" style={{ color: "var(--muted)" }}>{username}</p>}
-              {user.bio && <p className="text-sm" style={{ color: "var(--muted)" }}>{user.bio}</p>}
-              {Array.isArray(user.links) && user.links.length > 0 && (
+              {user.name && s?.showUsername && <p className="text-xs" style={{ color: "var(--muted)" }}>{username}</p>}
+              {s?.bio && <p className="text-sm" style={{ color: "var(--muted)" }}>{s.bio}</p>}
+              {Array.isArray(s?.links) && s.links.length > 0 && (
                 <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1">
-                  {(user.links as LinkItem[]).map((link) => {
+                  {(s.links as LinkItem[]).map((link) => {
                     let display = link.label;
                     if (!display) {
                       try { const u = new URL(link.url); display = (u.hostname + u.pathname.replace(/\/$/, "")).replace(/^www\./, ""); } catch { display = link.url; }
@@ -150,7 +157,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
             )}
           </div>
 
-          {user.showActivityGraph && (hasPublished || demo != null ? (
+          {s?.showActivityGraph && (hasPublished || demo != null ? (
             <div className="space-y-2">
               <ActivityCalendar publishedDates={calendarDates} username={username} posts={postsMap} />
             </div>

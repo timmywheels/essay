@@ -51,6 +51,11 @@
     font-variant: small-caps;
 }
 
+.pg main {
+    margin-left: 0;
+    margin-right: 0;
+}
+
 .pg-sidebar {
     display: none;
 }

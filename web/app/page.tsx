@@ -20,18 +20,18 @@ export default async function Home() {
             essay.sh
           </h1>
           <p className="text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
-            Commit your thoughts to source.
+            A blog that lives in your git repo.
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-px text-xs" style={{ color: "var(--muted)" }}>
           <div className="space-y-1 pr-6 text-right" style={{ borderRight: "1px dashed var(--border)" }}>
-            <p className="font-medium" style={{ color: "var(--foreground)" }}>git-native</p>
-            <p className="leading-relaxed">posts are markdown files in your own repo. no export, no lock-in.</p>
+            <p className="font-medium" style={{ color: "var(--foreground)" }}>live in minutes</p>
+            <p className="leading-relaxed">connect a GitHub repo and your essays are published instantly.</p>
           </div>
           <div className="space-y-1 pl-6 text-left">
-            <p className="font-medium" style={{ color: "var(--foreground)" }}>editor agnostic</p>
-            <p className="leading-relaxed">write in the browser, vim, or vscode. anything that speaks markdown.</p>
+            <p className="font-medium" style={{ color: "var(--foreground)" }}>you own it all</p>
+            <p className="leading-relaxed">posts are markdown files in your repo. publish from the cli or browser. no lock-in.</p>
           </div>
         </div>
 

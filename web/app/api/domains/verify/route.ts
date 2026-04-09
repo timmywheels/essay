@@ -7,17 +7,17 @@ export async function POST() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const user = await db.user.findUnique({ where: { id: session.user.id } });
-  if (!user?.customDomain) return NextResponse.json({ error: "No domain set" }, { status: 400 });
+  const settings = await db.userSettings.findUnique({ where: { userId: session.user.id } });
+  if (!settings?.customDomain) return NextResponse.json({ error: "No domain set" }, { status: 400 });
 
   const [result, config] = await Promise.all([
-    getDomainVerification(user.customDomain),
-    getDomainConfig(user.customDomain),
+    getDomainVerification(settings.customDomain),
+    getDomainConfig(settings.customDomain),
   ]);
   const verified = result.verified === true;
 
-  if (verified && !user.domainVerifiedAt) {
-    await db.user.update({ where: { id: user.id }, data: { domainVerifiedAt: new Date() } });
+  if (verified && !settings.domainVerifiedAt) {
+    await db.userSettings.update({ where: { userId: session.user.id }, data: { domainVerifiedAt: new Date() } });
   }
 
   return NextResponse.json({

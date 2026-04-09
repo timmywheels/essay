@@ -52,11 +52,14 @@ async function GitHubContent({
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string; slug: string }> }) {
   const { username, slug } = await params;
-  const user = await db.user.findUnique({ where: { username }, select: { id: true, name: true, showUsername: true } });
+  const user = await db.user.findUnique({
+    where: { username },
+    select: { id: true, name: true, settings: { select: { showUsername: true } } },
+  });
   if (!user) return {};
   const post = await db.post.findFirst({ where: { userId: user.id, slug, published: true, public: true } });
   if (!post) return {};
-  const author = user.name || (user.showUsername ? username : undefined);
+  const author = user.name || (user.settings?.showUsername ? username : undefined);
   return {
     title: post.title,
     openGraph: { title: post.title, type: "article", ...(author && { authors: [author] }) },
@@ -71,13 +74,24 @@ export default async function PostPage({ params }: { params: Promise<{ username:
   const user = await db.user.findUnique({
     where: { username },
     select: {
-      id: true, name: true, showUsername: true, profilePublic: true,
-      githubInstallationId: true, githubRepo: true, githubUsername: true,
-      theme: true, links: true,
+      id: true,
+      name: true,
+      githubInstallationId: true,
+      githubRepo: true,
+      githubUsername: true,
+      settings: {
+        select: {
+          showUsername: true,
+          profilePublic: true,
+          theme: true,
+          links: true,
+        },
+      },
     },
   });
   if (!user) notFound();
 
+  const s = user.settings;
   const isOwner = session?.user?.id === user.id;
 
   const post = await db.post.findFirst({
@@ -88,15 +102,15 @@ export default async function PostPage({ params }: { params: Promise<{ username:
     },
   });
   if (!post) notFound();
-  if (!user.profilePublic && !isOwner) notFound();
+  if (!s?.profilePublic && !isOwner) notFound();
 
   const host = (await headers()).get("host") ?? "";
   const isCustomDomain = host !== "essay.sh" && host !== "www.essay.sh" && !host.endsWith(".vercel.app") && !host.startsWith("localhost");
   const hasGitHub = !!(user.githubInstallationId && user.githubRepo && user.githubUsername);
-  const displayName = user.name || (user.showUsername ? username : null);
+  const displayName = user.name || (s?.showUsername ? username : null);
 
   // PG theme — owner gets PG-styled editor, visitors get PG reading view
-  if (user.theme === "pg") {
+  if (s?.theme === "pg") {
     if (isOwner) {
       let content: string | null = null;
       if (hasGitHub) {
@@ -106,7 +120,7 @@ export default async function PostPage({ params }: { params: Promise<{ username:
       return (
         <div className="pg">
           <style dangerouslySetInnerHTML={{ __html: `html,body{background:#fff}` }} />
-          <PgSidebar username={username} isCustomDomain={isCustomDomain} links={(user.links as { label: string; url: string }[]) ?? []} />
+          <PgSidebar username={username} isCustomDomain={isCustomDomain} links={(s.links as { label: string; url: string }[]) ?? []} />
           <Editor username={username} post={{ id: post.id, title: post.title, content: content ?? "", slug: post.slug, published: post.published, public: post.public }} />
         </div>
       );
@@ -124,9 +138,9 @@ export default async function PostPage({ params }: { params: Promise<{ username:
       <PgPostPage
         username={username}
         isCustomDomain={isCustomDomain}
-        links={(user.links as { label: string; url: string }[]) ?? []}
+        links={(s.links as { label: string; url: string }[]) ?? []}
         displayName={displayName}
-        profilePublic={user.profilePublic}
+        profilePublic={s.profilePublic}
         post={{ title: post.title, slug: post.slug, publishedAt: post.publishedAt, views: post.views }}
         github={hasGitHub ? { installationId: user.githubInstallationId!, username: user.githubUsername!, repo: user.githubRepo! } : null}
         prevHref={prevPost ? `${base}/${prevPost.slug}` : null}
@@ -164,14 +178,14 @@ export default async function PostPage({ params }: { params: Promise<{ username:
             <h1 className="text-2xl font-semibold leading-snug">{post.title}</h1>
             <div className="flex items-center justify-between text-xs" style={{ color: "var(--muted)" }}>
               <div className="flex items-center gap-2">
-                {user.profilePublic && (
+                {s?.profilePublic && (
                   <Link href={isCustomDomain ? "/" : `/${username}`} className="hover:underline underline-offset-2">
-                    {user.name || (user.showUsername ? username : "←")}
+                    {user.name || (s.showUsername ? username : "←")}
                   </Link>
                 )}
                 {post.publishedAt && (
                   <>
-                    {user.profilePublic && <span>·</span>}
+                    {s?.profilePublic && <span>·</span>}
                     <span>
                       {new Date(post.publishedAt).toLocaleDateString("en-US", {
                         year: "numeric", month: "long", day: "numeric",

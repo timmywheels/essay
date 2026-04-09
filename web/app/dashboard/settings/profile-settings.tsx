@@ -209,7 +209,9 @@ export function ProfileSettings({ initialName, initialBio, initialLinks, initial
             ))}
           </div>
           <p className="text-xs" style={{ color: "var(--muted)", opacity: 0.6 }}>
-            {theme === "pg" ? "paul graham mode — verdana, classic blue links, faded watermark." : "the default essay.sh look."}
+            {theme === "pg"
+              ? "paul graham mode — verdana, classic blue links, faded watermark."
+              : <>the default look, heavily inspired by <a href="https://x.com/rauchg" target="_blank" rel="noopener noreferrer" className="underline decoration-dotted underline-offset-2">@rauchg</a>'s blog.</>}
           </p>
         </div>
       </div>
