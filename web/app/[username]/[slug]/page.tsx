@@ -8,9 +8,9 @@ import { db } from "@/lib/db";
 import { getInstallationOctokit, getPostContent } from "@/lib/github";
 import { EssayBadge } from "@/components/essay-badge";
 import { PostNav } from "@/components/post-nav";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { PostSpinner } from "@/components/post-spinner";
 import { StreamingMarkdown } from "@/components/streaming-markdown";
-import { AppMenu, AppMenuItem } from "@/components/app-menu";
 import { PgPostPage } from "@/components/pg-post-page";
 import { PgSidebar } from "@/components/pg-sidebar";
 import Editor from "@/components/editor";
@@ -157,9 +157,7 @@ export default async function PostPage({ params }: { params: Promise<{ username:
 
   return (
     <div>
-      <AppMenu>
-        <AppMenuItem href="/dashboard/settings">settings</AppMenuItem>
-      </AppMenu>
+      <ThemeToggle />
       <main className="max-w-2xl mx-auto px-6 py-12" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         <div className="space-y-10" style={{ flex: 1 }}>
           <header className="space-y-2">
