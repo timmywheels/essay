@@ -445,6 +445,10 @@ export default function Editor({ username, post }: Props) {
           </div>
 
           <AppMenu>
+            <AppMenuItem onClick={toggleVim} indicator={vimMode}>
+              <span className="font-mono">vim</span>
+            </AppMenuItem>
+            <AppMenuSeparator />
             <AppMenuItem href="/dashboard/settings">settings</AppMenuItem>
           </AppMenu>
 
