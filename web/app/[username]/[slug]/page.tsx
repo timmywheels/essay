@@ -51,7 +51,7 @@ async function GitHubContent({
   githubRepo,
   slug,
 }: {
-  installationId: number;
+  installationId: string;
   githubUsername: string;
   githubRepo: string;
   slug: string;
