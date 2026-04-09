@@ -9,6 +9,7 @@ const schema = z.object({
   profilePublic:     z.boolean().optional(),
   showUsername:      z.boolean().optional(),
   showActivityGraph: z.boolean().optional(),
+  theme:             z.enum(["default", "pg"]).optional(),
   links:         z.array(z.object({ label: z.string(), url: z.string().url() })).max(5).optional(),
 });
 

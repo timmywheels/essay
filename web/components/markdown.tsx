@@ -5,13 +5,13 @@ import type { Components } from "react-markdown";
 
 const components: Components = {
   p:          ({ children }) => <p className="leading-relaxed mb-4 last:mb-0">{children}</p>,
-  h1:         ({ children }) => <h1 className="text-xl font-semibold mt-8 mb-3 first:mt-0" style={{ color: "var(--foreground)" }}>{children}</h1>,
-  h2:         ({ children }) => <h2 className="text-base font-semibold mt-7 mb-2" style={{ color: "var(--foreground)" }}>{children}</h2>,
-  h3:         ({ children }) => <h3 className="text-sm font-semibold mt-6 mb-1" style={{ color: "var(--foreground)" }}>{children}</h3>,
+  h1:         ({ children }) => <h1 className="text-xl font-semibold mt-8 mb-3 first:mt-0" style={{ color: "var(--heading)" }}>{children}</h1>,
+  h2:         ({ children }) => <h2 className="text-base font-semibold mt-7 mb-2" style={{ color: "var(--heading)" }}>{children}</h2>,
+  h3:         ({ children }) => <h3 className="text-sm font-semibold mt-6 mb-1" style={{ color: "var(--heading)" }}>{children}</h3>,
   a:          ({ href, children }) => (
     <a href={href} target={href?.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer"
       className="underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60"
-      style={{ color: "var(--foreground)" }}>
+      style={{ color: "var(--link)" }}>
       {children}
     </a>
   ),

@@ -19,6 +19,7 @@ export default async function SettingsPage() {
       profilePublic: true,
       showUsername: true,
       showActivityGraph: true,
+      theme: true,
       customDomain: true,
       domainVerifiedAt: true,
     },
@@ -40,6 +41,7 @@ export default async function SettingsPage() {
         initialProfilePublic={user.profilePublic}
         initialShowUsername={user.showUsername}
         initialShowActivityGraph={user.showActivityGraph}
+        initialTheme={user.theme}
         username={user.username ?? ""}
       />
 

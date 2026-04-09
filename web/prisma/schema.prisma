@@ -24,6 +24,7 @@ model User {
   profilePublic        Boolean   @default(true)
   showUsername         Boolean   @default(true)
   showActivityGraph    Boolean   @default(true)
+  theme                String    @default("default")
   links                Json?
   createdAt            DateTime  @default(now())
   posts                Post[]

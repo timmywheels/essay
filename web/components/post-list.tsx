@@ -11,6 +11,7 @@ export type PostItem = {
   published: boolean;
   public: boolean;
   publishedAt: Date | null;
+  createdAt: Date;
   views: number;
 };
 
@@ -20,7 +21,6 @@ interface Props {
   isCustomDomain: boolean;
   username: string;
 }
-
 
 export function PostList({ posts, isOwner, isCustomDomain, username }: Props) {
   const [highlightedSlug, setHighlightedSlug] = useState<string | null>(null);
@@ -61,7 +61,7 @@ export function PostList({ posts, isOwner, isCustomDomain, username }: Props) {
               {year}
             </span>
             <div className="flex flex-1 items-baseline gap-4 py-2 min-w-0" style={{ borderBottom: "1px dashed var(--border)" }}>
-              <Link href={href} className="flex-1 min-w-0 text-sm hover:underline underline-offset-2 truncate" style={{ color: "var(--foreground)" }}>
+              <Link href={href} className="flex-1 min-w-0 text-sm hover:underline underline-offset-2 truncate" style={{ color: "var(--link)" }}>
                 {post.title || "Untitled"}
                 {post.published && !post.public && <span className="ml-2 text-xs" style={{ color: "var(--muted)" }}>private</span>}
                 {!post.published && <span className="ml-2 text-xs" style={{ color: "var(--muted)" }}>draft</span>}

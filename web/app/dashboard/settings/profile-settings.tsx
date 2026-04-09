@@ -15,6 +15,11 @@ function defaultLabel(url: string): string {
   }
 }
 
+const THEMES = [
+  { value: "default", label: "Default" },
+  { value: "pg",      label: "PG" },
+];
+
 interface Props {
   initialName: string;
   initialBio: string;
@@ -22,16 +27,18 @@ interface Props {
   initialProfilePublic: boolean;
   initialShowUsername: boolean;
   initialShowActivityGraph: boolean;
+  initialTheme: string;
   username: string;
 }
 
-export function ProfileSettings({ initialName, initialBio, initialLinks, initialProfilePublic, initialShowUsername, initialShowActivityGraph, username }: Props) {
+export function ProfileSettings({ initialName, initialBio, initialLinks, initialProfilePublic, initialShowUsername, initialShowActivityGraph, initialTheme, username }: Props) {
   const [name, setName] = useState(initialName);
   const [bio, setBio] = useState(initialBio);
   const [links, setLinks] = useState<LinkItem[]>(initialLinks.length ? initialLinks : []);
   const [profilePublic, setProfilePublic] = useState(initialProfilePublic);
   const [showUsername, setShowUsername] = useState(initialShowUsername);
   const [showActivityGraph, setShowActivityGraph] = useState(initialShowActivityGraph);
+  const [theme, setTheme] = useState(initialTheme);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
 
   async function save() {
@@ -178,6 +185,31 @@ export function ProfileSettings({ initialName, initialBio, initialLinks, initial
           />
           <p className="text-xs" style={{ color: "var(--muted)", opacity: 0.6 }}>
             {showActivityGraph ? "publishing history is shown on your profile." : "activity graph is hidden from your profile."}
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs" style={{ color: "var(--foreground)" }}>theme</p>
+          <div className="flex gap-3">
+            {THEMES.map((t) => (
+              <button
+                key={t.value}
+                onClick={() => { setTheme(t.value); patch({ theme: t.value }); }}
+                className="text-xs px-3 py-1.5 transition-opacity hover:opacity-70"
+                style={{
+                  border: "1px dashed var(--border)",
+                  borderRadius: 0,
+                  color: theme === t.value ? "var(--foreground)" : "var(--muted)",
+                  opacity: theme === t.value ? 1 : 0.6,
+                  fontWeight: theme === t.value ? 500 : 400,
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs" style={{ color: "var(--muted)", opacity: 0.6 }}>
+            {theme === "pg" ? "paul graham mode — verdana, classic blue links, faded watermark." : "the default essay.sh look."}
           </p>
         </div>
       </div>

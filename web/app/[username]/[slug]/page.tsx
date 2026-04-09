@@ -11,6 +11,7 @@ import { PostNav } from "@/components/post-nav";
 import { PostSpinner } from "@/components/post-spinner";
 import { StreamingMarkdown } from "@/components/streaming-markdown";
 import { AppMenu, AppMenuItem } from "@/components/app-menu";
+import { PgPostPage } from "@/components/pg-post-page";
 import Editor from "@/components/editor";
 
 export const revalidate = 60;
@@ -71,6 +72,7 @@ export default async function PostPage({ params }: { params: Promise<{ username:
     select: {
       id: true, name: true, showUsername: true, profilePublic: true,
       githubInstallationId: true, githubRepo: true, githubUsername: true,
+      theme: true, links: true,
     },
   });
   if (!user) notFound();
@@ -124,9 +126,26 @@ export default async function PostPage({ params }: { params: Promise<{ username:
   const nextHref = nextPost ? `${base}/${nextPost.slug}` : null;
 
   const hasGitHub = !!(user.githubInstallationId && user.githubRepo && user.githubUsername);
+  const displayName = user.name || (user.showUsername ? username : null);
+
+  if (user.theme === "pg") {
+    return (
+      <PgPostPage
+        username={username}
+        isCustomDomain={isCustomDomain}
+        links={(user.links as { label: string; url: string }[]) ?? []}
+        displayName={displayName}
+        profilePublic={user.profilePublic}
+        post={{ title: post.title, slug: post.slug, publishedAt: post.publishedAt, views: post.views }}
+        github={hasGitHub ? { installationId: user.githubInstallationId!, username: user.githubUsername!, repo: user.githubRepo! } : null}
+        prevHref={prevHref}
+        nextHref={nextHref}
+      />
+    );
+  }
 
   return (
-    <>
+    <div>
       <AppMenu>
         <AppMenuItem href="/dashboard/settings">settings</AppMenuItem>
       </AppMenu>
@@ -173,6 +192,6 @@ export default async function PostPage({ params }: { params: Promise<{ username:
       </main>
       <EssayBadge username={username} />
       <PostNav prevHref={prevHref} nextHref={nextHref} />
-    </>
+    </div>
   );
 }

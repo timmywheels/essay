@@ -5,6 +5,8 @@
     --foreground: #1a1a1a;
     --muted: #888880;
     --border: #c8c7c0;
+    --link: var(--foreground);
+    --heading: var(--foreground);
     color-scheme: light;
 }
 
@@ -14,6 +16,55 @@
     --muted: #666660;
     --border: #333330;
     color-scheme: dark;
+}
+
+.pg {
+    --background: #ffffff;
+    --foreground: #000000;
+    --muted: #555555;
+    --border: #aaaaaa;
+    --link: #0000cc;
+    --heading: #9c3520;
+    font-family: Verdana, Geneva, sans-serif;
+    background: #ffffff;
+    color: #000000;
+    min-height: 100vh;
+    color-scheme: light;
+}
+
+.pg h1,
+.pg h2,
+.pg h3,
+.pg h4 {
+    font-family: 'Times New Roman', Times, serif;
+    font-variant: small-caps;
+    color: #9c3520;
+}
+
+.pg a {
+    color: #0000cc;
+    text-decoration: underline;
+}
+
+.pg-sidebar {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .pg-sidebar {
+        display: block;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 86px;
+        height: 100vh;
+        padding: 8px 4px;
+        z-index: 50;
+    }
+
+    .pg {
+        padding-left: 94px;
+    }
 }
 
 @theme inline {
