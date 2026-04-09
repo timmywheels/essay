@@ -66,6 +66,10 @@ export function AppMenu({ children }: Props) {
   );
 }
 
+export function AppMenuSeparator() {
+  return <div style={{ height: "1px", borderTop: "1px dashed var(--border)", margin: "4px 0" }} />;
+}
+
 export function AppMenuItem({ onClick, href, children, indicator }: {
   onClick?: () => void;
   href?: string;

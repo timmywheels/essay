@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { AppMenu, AppMenuItem } from "@/components/app-menu";
+import { AppMenu, AppMenuItem, AppMenuSeparator } from "@/components/app-menu";
 import CodeMirror, { EditorView, keymap, Prec, type ViewUpdate } from "@uiw/react-codemirror";
 import { vim, Vim } from "@replit/codemirror-vim";
 import { markdown } from "@codemirror/lang-markdown";
@@ -92,6 +92,7 @@ type SaveState = "idle" | "committing" | "pushing";
 
 export default function Editor({ username, post }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [title, setTitle] = useState(post?.title ?? "");
   const [content, setContent] = useState(post?.content ?? "");
   const [slug, setSlug] = useState(post?.slug ?? generateSlug());
@@ -100,7 +101,7 @@ export default function Editor({ username, post }: Props) {
   const [isPublished, setIsPublished] = useState(post?.published ?? false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [vimMode, setVimMode] = useState(false);
-  const [preview, setPreview] = useState(false);
+  const [preview, setPreview] = useState(!!post && !searchParams.has("edit"));
   const [uploading, setUploading] = useState(false);
   const [slashMenu, setSlashMenu] = useState<SlashMenuState | null>(null);
 
@@ -120,6 +121,15 @@ export default function Editor({ username, post }: Props) {
       return !prev;
     });
   }, []);
+
+  const togglePreview = useCallback(() => {
+    const next = !preview;
+    setPreview(next);
+    if (post) {
+      const base = `/${username}/${post.slug}`;
+      router.replace(next ? base : `${base}?edit`, { scroll: false });
+    }
+  }, [preview, post, username, router]);
 
   const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -311,12 +321,12 @@ export default function Editor({ username, post }: Props) {
       }
       if (e.key === "p") {
         e.preventDefault();
-        setPreview((p) => !p);
+        togglePreview();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [save]);
+  }, [save, togglePreview]);
 
   // Keep dropdown anchored to the slash position on scroll
   useEffect(() => {
@@ -368,7 +378,7 @@ export default function Editor({ username, post }: Props) {
 
         <div className="flex items-center gap-5">
           <button
-            onClick={() => setPreview((p) => !p)}
+            onClick={togglePreview}
             className="text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60"
             style={{ color: "var(--muted)" }}
           >
@@ -404,7 +414,7 @@ export default function Editor({ username, post }: Props) {
       {preview ? (
         <>
           <div>
-            <h1 className="text-2xl font-semibold leading-snug" style={{ color: "var(--foreground)" }}>
+            <h1 className="text-2xl font-semibold leading-snug">
               {title || <span style={{ color: "var(--muted)" }}>Untitled</span>}
             </h1>
           </div>
@@ -418,8 +428,8 @@ export default function Editor({ username, post }: Props) {
               value={title}
               onChange={handleTitleChange}
               placeholder="Title"
-              className="w-full text-2xl font-semibold outline-none border-none bg-transparent"
-              style={{ color: "var(--foreground)" }}
+              className="editor-title w-full text-2xl font-semibold outline-none border-none bg-transparent"
+              style={{ color: "var(--heading)" }}
             />
             <div className="flex items-center gap-1 text-sm" style={{ color: "var(--muted)" }}>
               <span>essay.sh/{username}/</span>
@@ -435,9 +445,7 @@ export default function Editor({ username, post }: Props) {
           </div>
 
           <AppMenu>
-            <AppMenuItem onClick={toggleVim} indicator={vimMode}>
-              <span className="font-mono">vim</span>
-            </AppMenuItem>
+            <AppMenuItem href="/dashboard/settings">settings</AppMenuItem>
           </AppMenu>
 
           <div

@@ -12,9 +12,10 @@ import { PostSpinner } from "@/components/post-spinner";
 import { StreamingMarkdown } from "@/components/streaming-markdown";
 import { AppMenu, AppMenuItem } from "@/components/app-menu";
 import { PgPostPage } from "@/components/pg-post-page";
+import { PgSidebar } from "@/components/pg-sidebar";
 import Editor from "@/components/editor";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 function timeAgo(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -89,46 +90,36 @@ export default async function PostPage({ params }: { params: Promise<{ username:
   if (!post) notFound();
   if (!user.profilePublic && !isOwner) notFound();
 
-  // Owner: block on GitHub fetch so the editor has content to populate
-  if (isOwner) {
-    let content: string | null = null;
-    if (user.githubInstallationId && user.githubRepo && user.githubUsername) {
-      const octokit = await getInstallationOctokit(user.githubInstallationId);
-      content = await getPostContent(octokit, user.githubUsername, user.githubRepo, slug);
-    }
-    return <Editor username={username} post={{ id: post.id, title: post.title, content: content ?? "", slug: post.slug, published: post.published, public: post.public }} />;
-  }
-
-  after(() => db.post.update({ where: { id: post.id }, data: { views: { increment: 1 } } }));
-
   const host = (await headers()).get("host") ?? "";
   const isCustomDomain = host !== "essay.sh" && host !== "www.essay.sh" && !host.endsWith(".vercel.app") && !host.startsWith("localhost");
-
-  const [prevPost, nextPost] = await Promise.all([
-    post.publishedAt
-      ? db.post.findFirst({
-          where: { userId: user.id, published: true, public: true, publishedAt: { lt: post.publishedAt } },
-          orderBy: { publishedAt: "desc" },
-          select: { slug: true },
-        })
-      : null,
-    post.publishedAt
-      ? db.post.findFirst({
-          where: { userId: user.id, published: true, public: true, publishedAt: { gt: post.publishedAt } },
-          orderBy: { publishedAt: "asc" },
-          select: { slug: true },
-        })
-      : null,
-  ]);
-
-  const base = isCustomDomain ? "" : `/${username}`;
-  const prevHref = prevPost ? `${base}/${prevPost.slug}` : null;
-  const nextHref = nextPost ? `${base}/${nextPost.slug}` : null;
-
   const hasGitHub = !!(user.githubInstallationId && user.githubRepo && user.githubUsername);
   const displayName = user.name || (user.showUsername ? username : null);
 
+  // PG theme — owner gets PG-styled editor, visitors get PG reading view
   if (user.theme === "pg") {
+    if (isOwner) {
+      let content: string | null = null;
+      if (hasGitHub) {
+        const octokit = await getInstallationOctokit(user.githubInstallationId!);
+        content = await getPostContent(octokit, user.githubUsername!, user.githubRepo!, slug);
+      }
+      return (
+        <div className="pg">
+          <style dangerouslySetInnerHTML={{ __html: `html,body{background:#fff}` }} />
+          <PgSidebar username={username} isCustomDomain={isCustomDomain} links={(user.links as { label: string; url: string }[]) ?? []} />
+          <Editor username={username} post={{ id: post.id, title: post.title, content: content ?? "", slug: post.slug, published: post.published, public: post.public }} />
+        </div>
+      );
+    }
+
+    after(() => db.post.update({ where: { id: post.id }, data: { views: { increment: 1 } } }));
+
+    const [prevPost, nextPost] = await Promise.all([
+      post.publishedAt ? db.post.findFirst({ where: { userId: user.id, published: true, public: true, publishedAt: { lt: post.publishedAt } }, orderBy: { publishedAt: "desc" }, select: { slug: true } }) : null,
+      post.publishedAt ? db.post.findFirst({ where: { userId: user.id, published: true, public: true, publishedAt: { gt: post.publishedAt } }, orderBy: { publishedAt: "asc" }, select: { slug: true } }) : null,
+    ]);
+    const base = isCustomDomain ? "" : `/${username}`;
+
     return (
       <PgPostPage
         username={username}
@@ -138,60 +129,82 @@ export default async function PostPage({ params }: { params: Promise<{ username:
         profilePublic={user.profilePublic}
         post={{ title: post.title, slug: post.slug, publishedAt: post.publishedAt, views: post.views }}
         github={hasGitHub ? { installationId: user.githubInstallationId!, username: user.githubUsername!, repo: user.githubRepo! } : null}
-        prevHref={prevHref}
-        nextHref={nextHref}
+        prevHref={prevPost ? `${base}/${prevPost.slug}` : null}
+        nextHref={nextPost ? `${base}/${nextPost.slug}` : null}
       />
     );
   }
+
+  // Default theme — owner gets editor
+  if (isOwner) {
+    let content: string | null = null;
+    if (hasGitHub) {
+      const octokit = await getInstallationOctokit(user.githubInstallationId!);
+      content = await getPostContent(octokit, user.githubUsername!, user.githubRepo!, slug);
+    }
+    return <Editor username={username} post={{ id: post.id, title: post.title, content: content ?? "", slug: post.slug, published: post.published, public: post.public }} />;
+  }
+
+  after(() => db.post.update({ where: { id: post.id }, data: { views: { increment: 1 } } }));
+
+  const [prevPost, nextPost] = await Promise.all([
+    post.publishedAt ? db.post.findFirst({ where: { userId: user.id, published: true, public: true, publishedAt: { lt: post.publishedAt } }, orderBy: { publishedAt: "desc" }, select: { slug: true } }) : null,
+    post.publishedAt ? db.post.findFirst({ where: { userId: user.id, published: true, public: true, publishedAt: { gt: post.publishedAt } }, orderBy: { publishedAt: "asc" }, select: { slug: true } }) : null,
+  ]);
+  const base = isCustomDomain ? "" : `/${username}`;
+  const prevHref = prevPost ? `${base}/${prevPost.slug}` : null;
+  const nextHref = nextPost ? `${base}/${nextPost.slug}` : null;
 
   return (
     <div>
       <AppMenu>
         <AppMenuItem href="/dashboard/settings">settings</AppMenuItem>
       </AppMenu>
-      <main className="max-w-2xl mx-auto px-6 py-12 space-y-10">
-        <header className="space-y-2">
-          <h1 className="text-2xl font-semibold leading-snug">{post.title}</h1>
-          <div className="flex items-center justify-between text-xs" style={{ color: "var(--muted)" }}>
-            <div className="flex items-center gap-2">
-              {user.profilePublic && (
-                <Link href={isCustomDomain ? "/" : `/${username}`} className="hover:underline underline-offset-2">
-                  {user.name || (user.showUsername ? username : "←")}
-                </Link>
-              )}
-              {post.publishedAt && (
-                <>
-                  {user.profilePublic && <span>·</span>}
-                  <span>
-                    {new Date(post.publishedAt).toLocaleDateString("en-US", {
-                      year: "numeric", month: "long", day: "numeric",
-                    })}
-                  </span>
-                  <span style={{ opacity: 0.5 }}>({timeAgo(new Date(post.publishedAt))})</span>
-                </>
-              )}
+      <main className="max-w-2xl mx-auto px-6 py-12" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        <div className="space-y-10" style={{ flex: 1 }}>
+          <header className="space-y-2">
+            <h1 className="text-2xl font-semibold leading-snug">{post.title}</h1>
+            <div className="flex items-center justify-between text-xs" style={{ color: "var(--muted)" }}>
+              <div className="flex items-center gap-2">
+                {user.profilePublic && (
+                  <Link href={isCustomDomain ? "/" : `/${username}`} className="hover:underline underline-offset-2">
+                    {user.name || (user.showUsername ? username : "←")}
+                  </Link>
+                )}
+                {post.publishedAt && (
+                  <>
+                    {user.profilePublic && <span>·</span>}
+                    <span>
+                      {new Date(post.publishedAt).toLocaleDateString("en-US", {
+                        year: "numeric", month: "long", day: "numeric",
+                      })}
+                    </span>
+                    <span style={{ opacity: 0.5 }}>({timeAgo(new Date(post.publishedAt))})</span>
+                  </>
+                )}
+              </div>
+              <span>{post.views.toLocaleString()} views</span>
             </div>
-            <span>{post.views.toLocaleString()} views</span>
-          </div>
-        </header>
+          </header>
 
-        {hasGitHub ? (
-          <Suspense fallback={<ContentSkeleton />}>
-            <GitHubContent
-              installationId={user.githubInstallationId!}
-              githubUsername={user.githubUsername!}
-              githubRepo={user.githubRepo!}
-              slug={slug}
-            />
-          </Suspense>
-        ) : (
-          <article className="text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
-            content unavailable
-          </article>
-        )}
+          {hasGitHub ? (
+            <Suspense fallback={<ContentSkeleton />}>
+              <GitHubContent
+                installationId={user.githubInstallationId!}
+                githubUsername={user.githubUsername!}
+                githubRepo={user.githubRepo!}
+                slug={slug}
+              />
+            </Suspense>
+          ) : (
+            <article className="text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
+              content unavailable
+            </article>
+          )}
+        </div>
+        <PostNav prevHref={prevHref} nextHref={nextHref} />
       </main>
       <EssayBadge username={username} />
-      <PostNav prevHref={prevHref} nextHref={nextHref} />
     </div>
   );
 }

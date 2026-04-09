@@ -46,6 +46,11 @@
     text-decoration: underline;
 }
 
+.pg .editor-title {
+    font-family: 'Times New Roman', Times, serif;
+    font-variant: small-caps;
+}
+
 .pg-sidebar {
     display: none;
 }

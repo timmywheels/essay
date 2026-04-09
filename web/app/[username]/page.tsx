@@ -71,7 +71,6 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
         bio={user.bio}
         posts={pgPosts}
         isOwner={isOwner}
-        profilePublic={user.profilePublic}
       />
     );
   }
@@ -185,7 +184,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
           />
         )}
 
-        {isOwner && <ProfileMenu initialProfilePublic={user.profilePublic} />}
+        {isOwner && <ProfileMenu />}
 
         <EssayBadge username={username} />
       </main>

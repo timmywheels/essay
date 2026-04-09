@@ -2,11 +2,7 @@
 
 import { AppMenu, AppMenuItem } from "@/components/app-menu";
 
-interface Props {
-  initialProfilePublic: boolean;
-}
-
-export function ProfileMenu({ initialProfilePublic: _ }: Props) {
+export function ProfileMenu() {
   return (
     <AppMenu>
       <AppMenuItem href="/dashboard/settings">settings</AppMenuItem>

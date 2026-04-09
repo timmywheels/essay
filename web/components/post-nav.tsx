@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface Props {
   prevHref: string | null;
@@ -29,11 +30,11 @@ export function PostNav({ prevHref, nextHref }: Props) {
 
   return (
     <div
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 text-xs select-none pointer-events-none"
-      style={{ color: "var(--muted)", opacity: 0.4, letterSpacing: "0.05em" }}
+      className="flex items-center gap-4 text-xs select-none pt-8 pb-4"
+      style={{ color: "var(--muted)", letterSpacing: "0.05em" }}
     >
-      {prevHref ? <span>← prev</span> : <span style={{ opacity: 0 }}>← prev</span>}
-      {nextHref ? <span>next →</span> : <span style={{ opacity: 0 }}>next →</span>}
+      {prevHref ? <Link href={prevHref} style={{ color: "inherit", textDecoration: "none" }}>← prev</Link> : <span style={{ opacity: 0 }}>← prev</span>}
+      {nextHref ? <Link href={nextHref} style={{ color: "inherit", textDecoration: "none" }}>next →</Link> : <span style={{ opacity: 0 }}>next →</span>}
     </div>
   );
 }
