@@ -2,6 +2,7 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import rehypeSanitize from "rehype-sanitize";
 import type { Components } from "react-markdown";
 
@@ -65,7 +66,7 @@ export function Markdown({ content, streaming }: { content: string; streaming?: 
   return (
     <div className="text-sm" style={{ color: "var(--foreground)" }}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkBreaks]}
         rehypePlugins={[rehypeSanitize]}
         components={components}
       >

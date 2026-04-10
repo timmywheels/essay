@@ -241,7 +241,7 @@ export default function Editor({ username, post, commitSha, github, variant }: P
     const { head } = viewUpdate.state.selection.main;
     const line = viewUpdate.state.doc.lineAt(head);
     const textBefore = line.text.slice(0, head - line.from);
-    const match = textBefore.match(/^\s*\/(\w*)$/);
+    const match = textBefore.match(/(?:^|\s)\/(\w*)$/);
     if (match) {
       const slashPos = line.from + textBefore.lastIndexOf("/");
       const query = match[1].toLowerCase();
