@@ -7,9 +7,10 @@ import Link from "next/link";
 interface Props {
   prevHref: string | null;
   nextHref: string | null;
+  compact?: boolean;
 }
 
-export function PostNav({ prevHref, nextHref }: Props) {
+export function PostNav({ prevHref, nextHref, compact }: Props) {
   const router = useRouter();
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export function PostNav({ prevHref, nextHref }: Props) {
 
   return (
     <div
-      className="flex items-center gap-4 text-xs select-none pt-8 pb-4"
+      className={`flex items-center gap-4 text-xs select-none ${compact ? "" : "pt-8 pb-4"}`}
       style={{ color: "var(--muted)", letterSpacing: "0.05em" }}
     >
       {prevHref ? <Link href={prevHref} style={{ color: "inherit", textDecoration: "none" }}>← prev</Link> : <span style={{ opacity: 0 }}>← prev</span>}

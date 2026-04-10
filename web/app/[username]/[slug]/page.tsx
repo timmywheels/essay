@@ -15,6 +15,7 @@ import { PgPostPage } from "@/components/pg-post-page";
 import { PgSidebar } from "@/components/pg-sidebar";
 import Editor from "@/components/editor";
 import { UserAnalytics } from "@/components/user-analytics";
+import { TextSelectIcon } from "@/components/icons/text-select-icon";
 
 export const dynamic = "force-dynamic";
 
@@ -239,7 +240,7 @@ export default async function PostPage({ params }: { params: Promise<{ username:
             </div>
           </div>
 
-          {/* Content — flex: 1 pushes nav to viewport bottom */}
+          {/* Content */}
           <div className="px-6 py-10" style={{ flex: 1 }}>
             {hasGitHub ? (
               <Suspense fallback={<ContentSkeleton />}>
@@ -256,15 +257,35 @@ export default async function PostPage({ params }: { params: Promise<{ username:
               </article>
             )}
           </div>
-
-          {/* Post navigation */}
-          <div style={{ borderTop: "1px dashed var(--border)" }}>
-            <div className="px-6 py-4">
-              <PostNav prevHref={prevHref} nextHref={nextHref} />
-            </div>
-          </div>
         </div>
-        <EssayBadge username={username} />
+
+        {/* Bottom bar: always sticky — PostNav in column cell, essay.sh in gutter (lg) or column cell (sm) */}
+        <div style={{ position: "sticky", bottom: 0, height: "44px", borderTop: "1px dashed var(--border)", background: "var(--background)", display: "grid", gridTemplateColumns: "1fr min(42rem, 100%) 1fr", alignItems: "center" }}>
+          <div />
+          <div className="px-6" style={{ borderLeft: "1px dashed var(--border)", borderRight: "1px dashed var(--border)", height: "100%", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            {(prevHref || nextHref) ? <PostNav prevHref={prevHref} nextHref={nextHref} compact /> : <span />}
+            <Link
+              href={`https://essay.sh?ref=${username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lg:hidden flex items-center gap-2 text-xs transition-opacity hover:opacity-70"
+              style={{ color: "var(--muted)" }}
+            >
+              <TextSelectIcon size={14} color="var(--muted)" />
+              essay.sh
+            </Link>
+          </div>
+          <Link
+            href={`https://essay.sh?ref=${username}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden lg:flex items-center justify-center gap-2 text-xs transition-opacity hover:opacity-70"
+            style={{ color: "var(--muted)" }}
+          >
+            <TextSelectIcon size={14} color="var(--muted)" />
+            essay.sh
+          </Link>
+        </div>
       </div>
     );
   }

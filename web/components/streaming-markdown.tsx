@@ -5,11 +5,12 @@ import { Markdown } from "@/components/markdown";
 import { PostSpinner } from "@/components/post-spinner";
 
 const MIN_SPINNER_MS = 1600;
-const CHARS_PER_FRAME = 35;
+const CHARS_PER_FRAME = 6;
 
 export function StreamingMarkdown({ content }: { content: string }) {
   // null = spinner phase, string = streaming/done
   const [displayed, setDisplayed] = useState<string | null>(null);
+  const [streaming, setStreaming] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -25,6 +26,8 @@ export function StreamingMarkdown({ content }: { content: string }) {
         setDisplayed(content.slice(0, pos));
         if (pos < content.length) {
           raf = requestAnimationFrame(frame);
+        } else {
+          setStreaming(false);
         }
       }
 
@@ -39,5 +42,5 @@ export function StreamingMarkdown({ content }: { content: string }) {
   }, [content]);
 
   if (displayed === null) return <PostSpinner />;
-  return <Markdown content={displayed} />;
+  return <Markdown content={displayed} streaming={streaming} />;
 }
