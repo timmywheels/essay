@@ -336,9 +336,12 @@ export default function Editor({ username, post, commitSha, github, variant }: P
   }, [save, togglePreview]);
 
   // Keep dropdown anchored to the slash position on scroll
+  const slashDropdownRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!slashMenu) return;
-    const updateCoords = () => {
+    const updateCoords = (e: Event) => {
+      // Ignore scroll events originating inside the dropdown itself
+      if (slashDropdownRef.current?.contains(e.target as Node)) return;
       const view = editorViewRef.current;
       const menu = slashMenuRef.current;
       if (!view || !menu) return;
@@ -461,6 +464,7 @@ export default function Editor({ username, post, commitSha, github, variant }: P
       <AnimatePresence>
         {slashMenu && filteredCmds.length > 0 && (
           <motion.div
+            ref={slashDropdownRef}
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
