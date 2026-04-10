@@ -17,6 +17,7 @@ function defaultLabel(url: string): string {
 
 const THEMES = [
   { value: "default", label: "Default" },
+  { value: "gr",      label: "GR" },
   { value: "pg",      label: "PG" },
 ];
 
@@ -211,7 +212,9 @@ export function ProfileSettings({ initialName, initialBio, initialLinks, initial
           <p className="text-xs" style={{ color: "var(--muted)", opacity: 0.6 }}>
             {theme === "pg"
               ? "paul graham mode — verdana, classic blue links, faded watermark."
-              : <>the default look, heavily inspired by <a href="https://x.com/rauchg" target="_blank" rel="noopener noreferrer" className="underline decoration-dotted underline-offset-2">@rauchg</a>'s blog.</>}
+              : theme === "gr"
+              ? <>inspired by <a href="https://x.com/rauchg" target="_blank" rel="noopener noreferrer" className="underline decoration-dotted underline-offset-2">@rauchg</a>'s blog — clean, minimal, typographic.</>
+              : "the default look — clean and spacious, inspired by the essay.sh aesthetic."}
           </p>
         </div>
       </div>

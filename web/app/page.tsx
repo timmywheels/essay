@@ -171,12 +171,11 @@ export default async function Home() {
         {/* ── Three-up features ── */}
         <section style={{ borderTop: "1px dashed var(--border)" }}>
           <div
-            className="max-w-4xl mx-auto px-6 py-16 grid grid-cols-1 sm:grid-cols-3 text-xs"
+            className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 text-xs"
             style={{ color: "var(--muted)" }}
           >
             <div
-              className="space-y-2 px-8 py-8 sm:py-0"
-              style={{ borderBottom: "1px dashed var(--border)" }}
+              className="space-y-2 px-8 py-16 border-b border-dashed border-border sm:border-b-0"
             >
               <p
                 className="font-medium text-sm"
@@ -190,8 +189,7 @@ export default async function Home() {
               </p>
             </div>
             <div
-              className="space-y-2 px-8 py-8 sm:py-0 sm:border-l sm:border-r sm:border-dashed sm:border-border"
-              style={{ borderBottom: "1px dashed var(--border)" }}
+              className="space-y-2 px-8 py-16 border-b border-dashed border-border sm:border-b-0 sm:border-l sm:border-r"
             >
               <p
                 className="font-medium text-sm"
@@ -205,17 +203,17 @@ export default async function Home() {
                 repo&nbsp;— pick your weapon.
               </p>
             </div>
-            <div className="space-y-2 px-8 py-8 sm:py-0">
+            <div className="space-y-2 px-8 py-16">
               <p
                 className="font-medium text-sm"
                 style={{ color: "var(--foreground)" }}
               >
-                your words, your repo, forever
+                open source, forever yours
               </p>
               <p className="leading-relaxed">
-                No lock-in, no export button, no migration dread. The repo is
-                the blog. Delete essay.sh tomorrow and your writing is still
-                sitting in main.
+                MIT licensed and fully open source. No lock-in, no export
+                button, no migration dread. The repo is the blog — delete
+                essay.sh tomorrow and your writing is still sitting in main.
               </p>
             </div>
           </div>
@@ -507,11 +505,11 @@ export default async function Home() {
       {/* ── Footer ── */}
       <footer style={{ borderTop: "1px dashed var(--border)" }}>
         <div
-          className="max-w-4xl mx-auto px-6 py-8 flex items-center justify-between text-xs"
+          className="max-w-4xl mx-auto px-6 py-8 flex items-center justify-between text-sm"
           style={{ color: "var(--muted)" }}
         >
-          <div className="flex items-center gap-2" style={{ opacity: 0.7 }}>
-            <TextSelectIcon size={13} color="var(--muted)" />
+          <div className="flex items-center gap-2 font-medium" style={{ opacity: 0.7 }}>
+            <TextSelectIcon size={16} color="var(--muted)" />
             <span>essay.sh</span>
           </div>
           <div className="flex items-center gap-6" style={{ opacity: 0.6 }}>
@@ -521,8 +519,9 @@ export default async function Home() {
               rel="noopener noreferrer"
               className="transition-opacity hover:opacity-100"
             >
-              github
+              open source
             </a>
+            <span>MIT</span>
             <span>© 2026</span>
           </div>
         </div>

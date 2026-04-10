@@ -71,6 +71,25 @@ export async function writePostToGitHub(
   });
 }
 
+export async function getLastCommitSha(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  slug: string,
+): Promise<string | null> {
+  try {
+    const { data } = await octokit.repos.listCommits({
+      owner,
+      repo,
+      path: `posts/${slug}.md`,
+      per_page: 1,
+    });
+    return data[0]?.sha ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getPostContent(
   octokit: Octokit,
   owner: string,

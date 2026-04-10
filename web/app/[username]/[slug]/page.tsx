@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import { after } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { getInstallationOctokit, getPostContent } from "@/lib/github";
+import { getInstallationOctokit, getPostContent, getLastCommitSha } from "@/lib/github";
 import { EssayBadge } from "@/components/essay-badge";
 import { PostNav } from "@/components/post-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -113,15 +113,24 @@ export default async function PostPage({ params }: { params: Promise<{ username:
   if (s?.theme === "pg") {
     if (isOwner) {
       let content: string | null = null;
+      let commitSha: string | null = null;
       if (hasGitHub) {
         const octokit = await getInstallationOctokit(user.githubInstallationId!);
-        content = await getPostContent(octokit, user.githubUsername!, user.githubRepo!, slug);
+        [content, commitSha] = await Promise.all([
+          getPostContent(octokit, user.githubUsername!, user.githubRepo!, slug),
+          post.published ? getLastCommitSha(octokit, user.githubUsername!, user.githubRepo!, slug) : Promise.resolve(null),
+        ]);
       }
       return (
         <div className="pg">
           <style dangerouslySetInnerHTML={{ __html: `html,body{background:#fff}` }} />
           <PgSidebar username={username} isCustomDomain={isCustomDomain} links={(s.links as { label: string; url: string }[]) ?? []} />
-          <Editor username={username} post={{ id: post.id, title: post.title, content: content ?? "", slug: post.slug, published: post.published, public: post.public }} />
+          <Editor
+            username={username}
+            post={{ id: post.id, title: post.title, content: content ?? "", slug: post.slug, published: post.published, public: post.public }}
+            commitSha={commitSha}
+            github={hasGitHub ? { username: user.githubUsername!, repo: user.githubRepo! } : null}
+          />
         </div>
       );
     }
@@ -149,14 +158,26 @@ export default async function PostPage({ params }: { params: Promise<{ username:
     );
   }
 
-  // Default theme — owner gets editor
+  // Non-PG theme — owner gets editor
   if (isOwner) {
     let content: string | null = null;
+    let commitSha: string | null = null;
     if (hasGitHub) {
       const octokit = await getInstallationOctokit(user.githubInstallationId!);
-      content = await getPostContent(octokit, user.githubUsername!, user.githubRepo!, slug);
+      [content, commitSha] = await Promise.all([
+        getPostContent(octokit, user.githubUsername!, user.githubRepo!, slug),
+        post.published ? getLastCommitSha(octokit, user.githubUsername!, user.githubRepo!, slug) : Promise.resolve(null),
+      ]);
     }
-    return <Editor username={username} post={{ id: post.id, title: post.title, content: content ?? "", slug: post.slug, published: post.published, public: post.public }} />;
+    return (
+      <Editor
+        username={username}
+        post={{ id: post.id, title: post.title, content: content ?? "", slug: post.slug, published: post.published, public: post.public }}
+        commitSha={commitSha}
+        github={hasGitHub ? { username: user.githubUsername!, repo: user.githubRepo! } : null}
+        variant={(!s?.theme || s.theme === "default") ? "default" : "gr"}
+      />
+    );
   }
 
   after(() => db.post.update({ where: { id: post.id }, data: { views: { increment: 1 } } }));
@@ -169,6 +190,80 @@ export default async function PostPage({ params }: { params: Promise<{ username:
   const prevHref = prevPost ? `${base}/${prevPost.slug}` : null;
   const nextHref = nextPost ? `${base}/${nextPost.slug}` : null;
 
+  // Default theme: bordered column layout matching profile page aesthetic
+  if (!s?.theme || s.theme === "default") {
+    return (
+      <div>
+        <div className="max-w-2xl mx-auto" style={{
+          borderLeft: "1px dashed var(--border)",
+          borderRight: "1px dashed var(--border)",
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+        }}>
+          {/* Top nav */}
+          <div style={{ borderBottom: "1px dashed var(--border)" }}>
+            <div className="px-6 py-3 flex items-center justify-between">
+              {s?.profilePublic ? (
+                <Link href={isCustomDomain ? "/" : `/${username}`}
+                  className="text-xs transition-opacity hover:opacity-60"
+                  style={{ color: "var(--muted)" }}>
+                  ← {displayName || username}
+                </Link>
+              ) : <span />}
+              <ThemeToggle className="transition-opacity hover:opacity-60" />
+            </div>
+          </div>
+
+          {/* Title / meta */}
+          <div style={{ borderBottom: "1px dashed var(--border)" }}>
+            <div className="px-6 py-10 space-y-2">
+              <h1 className="text-2xl font-semibold leading-snug">{post.title}</h1>
+              <div className="flex items-center justify-between text-xs" style={{ color: "var(--muted)" }}>
+                <div className="flex items-center gap-2">
+                  {post.publishedAt && (
+                    <>
+                      <span>{new Date(post.publishedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
+                      <span style={{ opacity: 0.5 }}>({timeAgo(new Date(post.publishedAt))})</span>
+                    </>
+                  )}
+                </div>
+                <span>{post.views.toLocaleString()} views</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Content — flex: 1 pushes nav to viewport bottom */}
+          <div className="px-6 py-10" style={{ flex: 1 }}>
+            {hasGitHub ? (
+              <Suspense fallback={<ContentSkeleton />}>
+                <GitHubContent
+                  installationId={user.githubInstallationId!}
+                  githubUsername={user.githubUsername!}
+                  githubRepo={user.githubRepo!}
+                  slug={slug}
+                />
+              </Suspense>
+            ) : (
+              <article className="text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
+                content unavailable
+              </article>
+            )}
+          </div>
+
+          {/* Post navigation */}
+          <div style={{ borderTop: "1px dashed var(--border)" }}>
+            <div className="px-6 py-4">
+              <PostNav prevHref={prevHref} nextHref={nextHref} />
+            </div>
+          </div>
+        </div>
+        <EssayBadge username={username} />
+      </div>
+    );
+  }
+
+  // GR theme fallback
   return (
     <div>
       <ThemeToggle />

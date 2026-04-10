@@ -24,6 +24,9 @@ type Post = {
 type Props = {
   username: string;
   post?: Post;
+  commitSha?: string | null;
+  github?: { username: string; repo: string } | null;
+  variant?: "default" | "gr";
 };
 
 type SlashCommand = {
@@ -90,7 +93,7 @@ const baseTheme = EditorView.theme({
 
 type SaveState = "idle" | "committing" | "pushing";
 
-export default function Editor({ username, post }: Props) {
+export default function Editor({ username, post, commitSha, github, variant }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [title, setTitle] = useState(post?.title ?? "");
@@ -104,6 +107,10 @@ export default function Editor({ username, post }: Props) {
   const [preview, setPreview] = useState(!!post && !searchParams.has("edit"));
   const [uploading, setUploading] = useState(false);
   const [slashMenu, setSlashMenu] = useState<SlashMenuState | null>(null);
+
+  const initialTitle = useRef(post?.title ?? "");
+  const initialContent = useRef(post?.content ?? "");
+  const isDirty = title !== initialTitle.current || content !== initialContent.current;
 
   const editorViewRef = useRef<EditorView | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -357,6 +364,217 @@ export default function Editor({ username, post }: Props) {
 
   const filteredCmds = slashMenu ? getFilteredCommands(slashMenu.query) : [];
 
+  const navButtons = (
+    <div className="flex items-center gap-5">
+      <button
+        onClick={togglePreview}
+        className="text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60"
+        style={{ color: "var(--muted)" }}
+      >
+        {preview ? "edit" : "preview"}
+      </button>
+      <button
+        onClick={() => setIsPublic((p) => !p)}
+        className="flex items-center gap-1 text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60"
+        style={{ color: "var(--muted)" }}
+      >
+        {!isPublic && <LockClosedIcon width={10} height={10} />}
+        {isPublic ? "public" : "private"}
+      </button>
+      <button
+        onClick={() => save(false)}
+        disabled={saveState !== "idle"}
+        className={`text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60 ${saveState === "committing" ? "text-shimmer" : ""}`}
+        style={saveState === "committing" ? undefined : { color: "var(--muted)" }}
+      >
+        commit
+      </button>
+      <button
+        onClick={() => save(true)}
+        disabled={saveState !== "idle" || !slug}
+        className={`text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60 ${saveState === "pushing" ? "text-shimmer" : ""}`}
+        style={saveState === "pushing" ? undefined : { color: "var(--muted)" }}
+      >
+        push
+      </button>
+    </div>
+  );
+
+  const gitStatus = (
+    <div className="flex items-center gap-1.5 font-mono text-xs" style={{ color: "var(--muted)", opacity: 0.5 }}>
+      <span>main</span>
+      <span>·</span>
+      {saveState !== "idle" ? (
+        <span className="text-shimmer">{saveState === "committing" ? "committing…" : "pushing…"}</span>
+      ) : isDirty ? (
+        <span>uncommitted changes</span>
+      ) : commitSha && github ? (
+        <a
+          href={`https://github.com/${github.username}/${github.repo}/commit/${commitSha}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:opacity-100 transition-opacity"
+          style={{ opacity: 0.8 }}
+        >
+          {commitSha.slice(0, 7)}
+        </a>
+      ) : (
+        <span>{isPublished ? "committed" : "draft"}</span>
+      )}
+    </div>
+  );
+
+  const codeEditor = (
+    <div
+      onDrop={handleDrop}
+      onDragOver={(e) => e.preventDefault()}
+      onPaste={handlePaste}
+      className="relative"
+    >
+      {uploading && (
+        <div className="absolute inset-0 flex items-start pt-1 pointer-events-none" style={{ zIndex: 10 }}>
+          <span className="text-xs" style={{ color: "var(--muted)", fontFamily: "var(--font-geist-mono)" }}>uploading…</span>
+        </div>
+      )}
+      <CodeMirror
+        value={content}
+        onChange={setContent}
+        onUpdate={handleUpdate}
+        extensions={extensions}
+        placeholder="Write something..."
+        onCreateEditor={(view) => { editorViewRef.current = view; }}
+        basicSetup={{
+          lineNumbers: false,
+          foldGutter: false,
+          dropCursor: false,
+          allowMultipleSelections: false,
+          indentOnInput: false,
+          bracketMatching: false,
+          closeBrackets: false,
+          autocompletion: false,
+          highlightActiveLine: false,
+          highlightSelectionMatches: false,
+          searchKeymap: false,
+          syntaxHighlighting: false,
+        }}
+      />
+      <AnimatePresence>
+        {slashMenu && filteredCmds.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.1 }}
+            style={{
+              position: "fixed",
+              top: slashMenu.coords.top + 6,
+              left: slashMenu.coords.left,
+              zIndex: 100,
+              border: "1px dashed var(--border)",
+              background: "var(--background)",
+              minWidth: "200px",
+              maxHeight: "220px",
+              overflowY: "auto",
+              padding: "3px 0",
+            }}
+          >
+            {filteredCmds.map((cmd, i) => (
+              <button
+                key={cmd.hint}
+                ref={(el) => { if (el && i === slashMenu.activeIndex) el.scrollIntoView({ block: "nearest" }); }}
+                onMouseDown={(e) => { e.preventDefault(); applySlashCommand(cmd); }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  width: "100%",
+                  padding: "5px 12px",
+                  background: i === slashMenu.activeIndex ? "var(--border)" : "transparent",
+                  color: i === slashMenu.activeIndex ? "var(--foreground)" : "var(--muted)",
+                  fontSize: "12px",
+                  fontFamily: "var(--font-geist-mono)",
+                  border: "none",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <span style={{ opacity: 0.5, minWidth: "28px", fontSize: "11px" }}>{cmd.hint}</span>
+                <span>{cmd.label}</span>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
+  if (variant === "default") {
+    return (
+      <div className="max-w-2xl mx-auto" style={{
+        borderLeft: "1px dashed var(--border)",
+        borderRight: "1px dashed var(--border)",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+      }}>
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+          onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadImage(file); e.target.value = ""; }}
+        />
+
+        {/* Nav */}
+        <div style={{ borderBottom: "1px dashed var(--border)" }}>
+          <div className="px-6 py-3 flex items-center justify-between">
+            <Link href={`/${username}`} className="text-xs transition-opacity hover:opacity-60" style={{ color: "var(--muted)" }}>
+              ← {username}
+            </Link>
+            {navButtons}
+          </div>
+        </div>
+
+        {/* Title / slug / status */}
+        <div style={{ borderBottom: "1px dashed var(--border)" }}>
+          <div className="px-6 py-10">
+            {preview ? (
+              <h1 className="text-2xl font-semibold leading-snug">
+                {title || <span style={{ color: "var(--muted)" }}>Untitled</span>}
+              </h1>
+            ) : (
+              <div className="space-y-3">
+                <input type="text" value={title} onChange={handleTitleChange} placeholder="Title"
+                  className="editor-title w-full text-2xl font-semibold outline-none border-none bg-transparent"
+                  style={{ color: "var(--heading)" }}
+                />
+                <div className="flex items-center gap-1 text-sm" style={{ color: "var(--muted)" }}>
+                  <span>essay.sh/{username}/</span>
+                  <input type="text" value={slug} onChange={handleSlugChange} placeholder="slug"
+                    className="flex-1 outline-none bg-transparent" style={{ color: "var(--muted)" }}
+                  />
+                </div>
+                {gitStatus}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="px-6 py-10" style={{ flex: 1 }}>
+          {preview ? (
+            <Markdown content={content} />
+          ) : (
+            <>
+              <AppMenu>
+                <AppMenuItem onClick={toggleVim} indicator={vimMode}><span className="font-mono">vim</span></AppMenuItem>
+                <AppMenuSeparator />
+                <AppMenuItem href="/dashboard/settings">settings</AppMenuItem>
+              </AppMenu>
+              {codeEditor}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <main className="max-w-2xl mx-auto px-6 pt-12 pb-64 space-y-8">
       <input
@@ -375,40 +593,7 @@ export default function Editor({ username, post }: Props) {
         <Link href={`/${username}`} className="text-xs transition-opacity hover:opacity-60" style={{ color: "var(--muted)" }}>
           ← {username}
         </Link>
-
-        <div className="flex items-center gap-5">
-          <button
-            onClick={togglePreview}
-            className="text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60"
-            style={{ color: "var(--muted)" }}
-          >
-            {preview ? "edit" : "preview"}
-          </button>
-          <button
-            onClick={() => setIsPublic((p) => !p)}
-            className="flex items-center gap-1 text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60"
-            style={{ color: "var(--muted)" }}
-          >
-            {!isPublic && <LockClosedIcon width={10} height={10} />}
-            {isPublic ? "public" : "private"}
-          </button>
-          <button
-            onClick={() => save(false)}
-            disabled={saveState !== "idle"}
-            className={`text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60 ${saveState === "committing" ? "text-shimmer" : ""}`}
-            style={saveState === "committing" ? undefined : { color: "var(--muted)" }}
-          >
-            commit
-          </button>
-          <button
-            onClick={() => save(true)}
-            disabled={saveState !== "idle" || !slug}
-            className={`text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60 ${saveState === "pushing" ? "text-shimmer" : ""}`}
-            style={saveState === "pushing" ? undefined : { color: "var(--muted)" }}
-          >
-            push
-          </button>
-        </div>
+        {navButtons}
       </div>
 
       {preview ? (
@@ -442,6 +627,7 @@ export default function Editor({ username, post }: Props) {
                 style={{ color: "var(--muted)" }}
               />
             </div>
+            {gitStatus}
           </div>
 
           <AppMenu>
@@ -452,88 +638,7 @@ export default function Editor({ username, post }: Props) {
             <AppMenuItem href="/dashboard/settings">settings</AppMenuItem>
           </AppMenu>
 
-          <div
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
-            onPaste={handlePaste}
-            className="relative"
-          >
-            {uploading && (
-              <div className="absolute inset-0 flex items-start pt-1 pointer-events-none" style={{ zIndex: 10 }}>
-                <span className="text-xs" style={{ color: "var(--muted)", fontFamily: "var(--font-geist-mono)" }}>uploading…</span>
-              </div>
-            )}
-            <CodeMirror
-              value={content}
-              onChange={setContent}
-              onUpdate={handleUpdate}
-              extensions={extensions}
-              placeholder="Write something..."
-              onCreateEditor={(view) => { editorViewRef.current = view; }}
-              basicSetup={{
-                lineNumbers: false,
-                foldGutter: false,
-                dropCursor: false,
-                allowMultipleSelections: false,
-                indentOnInput: false,
-                bracketMatching: false,
-                closeBrackets: false,
-                autocompletion: false,
-                highlightActiveLine: false,
-                highlightSelectionMatches: false,
-                searchKeymap: false,
-                syntaxHighlighting: false,
-              }}
-            />
-
-            <AnimatePresence>
-              {slashMenu && filteredCmds.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.1 }}
-                  style={{
-                    position: "fixed",
-                    top: slashMenu.coords.top + 6,
-                    left: slashMenu.coords.left,
-                    zIndex: 100,
-                    border: "1px dashed var(--border)",
-                    background: "var(--background)",
-                    minWidth: "200px",
-                    maxHeight: "220px",
-                    overflowY: "auto",
-                    padding: "3px 0",
-                  }}
-                >
-                  {filteredCmds.map((cmd, i) => (
-                    <button
-                      key={cmd.hint}
-                      ref={(el) => { if (el && i === slashMenu.activeIndex) el.scrollIntoView({ block: "nearest" }); }}
-                      onMouseDown={(e) => { e.preventDefault(); applySlashCommand(cmd); }}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        width: "100%",
-                        padding: "5px 12px",
-                        background: i === slashMenu.activeIndex ? "var(--border)" : "transparent",
-                        color: i === slashMenu.activeIndex ? "var(--foreground)" : "var(--muted)",
-                        fontSize: "12px",
-                        fontFamily: "var(--font-geist-mono)",
-                        border: "none",
-                        cursor: "pointer",
-                        textAlign: "left",
-                      }}
-                    >
-                      <span style={{ opacity: 0.5, minWidth: "28px", fontSize: "11px" }}>{cmd.hint}</span>
-                      <span>{cmd.label}</span>
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          {codeEditor}
         </>
       )}
     </main>
