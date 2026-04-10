@@ -10,6 +10,7 @@ import { ProfileMenu } from "@/components/profile-menu";
 import { EssayBadge } from "@/components/essay-badge";
 import { PgProfilePage } from "@/components/pg-profile-page";
 import { TextSelectIcon } from "@/components/icons/text-select-icon";
+import { UserAnalytics } from "@/components/user-analytics";
 
 type LinkItem = { label: string; url: string };
 
@@ -71,15 +72,18 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
   if (s?.theme === "pg") {
     const pgPosts = [...visiblePosts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return (
-      <PgProfilePage
-        username={username}
-        isCustomDomain={isCustomDomain}
-        links={(s.links as LinkItem[]) ?? []}
-        displayName={displayName}
-        bio={s.bio}
-        posts={pgPosts}
-        isOwner={isOwner}
-      />
+      <>
+        <UserAnalytics measurementId={s.analyticsId} />
+        <PgProfilePage
+          username={username}
+          isCustomDomain={isCustomDomain}
+          links={(s.links as LinkItem[]) ?? []}
+          displayName={displayName}
+          bio={s.bio}
+          posts={pgPosts}
+          isOwner={isOwner}
+        />
+      </>
     );
   }
 
@@ -132,6 +136,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
   if (!s?.theme || s.theme === "default") {
     return (
       <div>
+        <UserAnalytics measurementId={s?.analyticsId} />
         <div className="max-w-2xl mx-auto" style={{ borderLeft: "1px dashed var(--border)", borderRight: "1px dashed var(--border)", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
           {isOwner && !user.githubInstallationId && (
             <div style={{ borderBottom: "1px dashed var(--border)" }}>
@@ -229,6 +234,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
   // "gr" = rauchg-inspired compact layout
   return (
     <div>
+      <UserAnalytics measurementId={s?.analyticsId} />
       <main className="max-w-2xl mx-auto px-6 py-12 space-y-6">
         {isOwner && !user.githubInstallationId && (
           <div className="text-xs flex items-center gap-3" style={{ color: "var(--muted)" }}>

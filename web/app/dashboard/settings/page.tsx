@@ -37,6 +37,7 @@ export default async function SettingsPage() {
         initialShowUsername={s?.showUsername ?? true}
         initialShowActivityGraph={s?.showActivityGraph ?? true}
         initialTheme={s?.theme ?? "default"}
+        initialAnalyticsId={s?.analyticsId ?? ""}
         username={user.username ?? ""}
       />
 

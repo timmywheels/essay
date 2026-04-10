@@ -98,24 +98,15 @@ export default async function Home() {
             className="text-3xl sm:text-4xl font-semibold tracking-tight mb-5"
             style={{ color: "var(--foreground)", lineHeight: 1.2 }}
           >
-            A blog that lives in
+            Your blog. Your domain.
             <br />
-            your git repo.
+            Your git repo.
           </h1>
           <p
-            className="text-base mb-4 leading-relaxed"
+            className="text-base mb-12 leading-relaxed"
             style={{ color: "var(--muted)" }}
           >
-            Write from your terminal or your browser. Publish in one
-            command&nbsp;— or one click.
-          </p>
-          <p
-            className="text-sm mb-12 leading-relaxed"
-            style={{ color: "var(--muted)", opacity: 0.7 }}
-          >
-            essay.sh turns a GitHub repo into a blog on your own domain. Draft
-            in markdown, commit when it's ready, and it's live in under a
-            minute.
+            Write from a terminal or browser. Publish to a custom domain in one click. GitHub is the database.
           </p>
 
           {/* CTAs */}

@@ -39,6 +39,7 @@ model UserSettings {
   links             Json?
   customDomain      String?   @unique @map("custom_domain")
   domainVerifiedAt  DateTime? @map("domain_verified_at")
+  analyticsId       String?   @map("analytics_id")
 
   @@index([customDomain])
   @@map("user_settings")

@@ -14,6 +14,7 @@ import { StreamingMarkdown } from "@/components/streaming-markdown";
 import { PgPostPage } from "@/components/pg-post-page";
 import { PgSidebar } from "@/components/pg-sidebar";
 import Editor from "@/components/editor";
+import { UserAnalytics } from "@/components/user-analytics";
 
 export const dynamic = "force-dynamic";
 
@@ -85,6 +86,7 @@ export default async function PostPage({ params }: { params: Promise<{ username:
           profilePublic: true,
           theme: true,
           links: true,
+          analyticsId: true,
         },
       },
     },
@@ -144,17 +146,20 @@ export default async function PostPage({ params }: { params: Promise<{ username:
     const base = isCustomDomain ? "" : `/${username}`;
 
     return (
-      <PgPostPage
-        username={username}
-        isCustomDomain={isCustomDomain}
-        links={(s.links as { label: string; url: string }[]) ?? []}
-        displayName={displayName}
-        profilePublic={s.profilePublic}
-        post={{ title: post.title, slug: post.slug, publishedAt: post.publishedAt, views: post.views }}
-        github={hasGitHub ? { installationId: user.githubInstallationId!, username: user.githubUsername!, repo: user.githubRepo! } : null}
-        prevHref={prevPost ? `${base}/${prevPost.slug}` : null}
-        nextHref={nextPost ? `${base}/${nextPost.slug}` : null}
-      />
+      <>
+        <UserAnalytics measurementId={s.analyticsId} />
+        <PgPostPage
+          username={username}
+          isCustomDomain={isCustomDomain}
+          links={(s.links as { label: string; url: string }[]) ?? []}
+          displayName={displayName}
+          profilePublic={s.profilePublic}
+          post={{ title: post.title, slug: post.slug, publishedAt: post.publishedAt, views: post.views }}
+          github={hasGitHub ? { installationId: user.githubInstallationId!, username: user.githubUsername!, repo: user.githubRepo! } : null}
+          prevHref={prevPost ? `${base}/${prevPost.slug}` : null}
+          nextHref={nextPost ? `${base}/${nextPost.slug}` : null}
+        />
+      </>
     );
   }
 
@@ -194,6 +199,7 @@ export default async function PostPage({ params }: { params: Promise<{ username:
   if (!s?.theme || s.theme === "default") {
     return (
       <div>
+        <UserAnalytics measurementId={s?.analyticsId} />
         <div className="max-w-2xl mx-auto" style={{
           borderLeft: "1px dashed var(--border)",
           borderRight: "1px dashed var(--border)",
@@ -266,6 +272,7 @@ export default async function PostPage({ params }: { params: Promise<{ username:
   // GR theme fallback
   return (
     <div>
+      <UserAnalytics measurementId={s?.analyticsId} />
       <ThemeToggle />
       <main className="max-w-2xl mx-auto px-6 py-12" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         <div className="space-y-10" style={{ flex: 1 }}>

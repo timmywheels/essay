@@ -29,13 +29,15 @@ interface Props {
   initialShowUsername: boolean;
   initialShowActivityGraph: boolean;
   initialTheme: string;
+  initialAnalyticsId: string;
   username: string;
 }
 
-export function ProfileSettings({ initialName, initialBio, initialLinks, initialProfilePublic, initialShowUsername, initialShowActivityGraph, initialTheme, username }: Props) {
+export function ProfileSettings({ initialName, initialBio, initialLinks, initialProfilePublic, initialShowUsername, initialShowActivityGraph, initialTheme, initialAnalyticsId, username }: Props) {
   const [name, setName] = useState(initialName);
   const [bio, setBio] = useState(initialBio);
   const [links, setLinks] = useState<LinkItem[]>(initialLinks.length ? initialLinks : []);
+  const [analyticsId, setAnalyticsId] = useState(initialAnalyticsId);
   const [profilePublic, setProfilePublic] = useState(initialProfilePublic);
   const [showUsername, setShowUsername] = useState(initialShowUsername);
   const [showActivityGraph, setShowActivityGraph] = useState(initialShowActivityGraph);
@@ -215,6 +217,22 @@ export function ProfileSettings({ initialName, initialBio, initialLinks, initial
               : theme === "gr"
               ? <>inspired by <a href="https://x.com/rauchg" target="_blank" rel="noopener noreferrer" className="underline decoration-dotted underline-offset-2">@rauchg</a>'s blog — clean, minimal, typographic.</>
               : "the default look — clean and spacious, inspired by the essay.sh aesthetic."}
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs" style={{ color: "var(--foreground)" }}>analytics</p>
+          <input
+            type="text"
+            value={analyticsId}
+            onChange={(e) => setAnalyticsId(e.target.value)}
+            placeholder="G-XXXXXXXXXX"
+            className="w-full px-3 py-2 text-sm bg-transparent outline-none font-mono"
+            style={{ border: "1px dashed var(--border)", color: "var(--foreground)", borderRadius: 0 }}
+            onBlur={() => patch({ analyticsId: analyticsId.trim() || null })}
+          />
+          <p className="text-xs" style={{ color: "var(--muted)", opacity: 0.6 }}>
+            google analytics 4 measurement id. injected on your profile and post pages only.
           </p>
         </div>
       </div>
