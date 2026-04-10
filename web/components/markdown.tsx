@@ -40,7 +40,7 @@ export function Markdown({ content, streaming }: { content: string; streaming?: 
       </blockquote>
     ),
     hr:         () => <hr className="my-8" style={{ borderColor: "var(--border)", borderStyle: "dashed" }} />,
-    img:        ({ src, alt }) => streaming ? null : <FadeImage src={src} alt={alt} />,
+    img:        ({ src, alt }) => streaming ? null : <FadeImage src={typeof src === "string" ? src : undefined} alt={alt} />,
     code:       ({ children, className }) => {
       const isBlock = className?.startsWith("language-");
       if (isBlock) {
