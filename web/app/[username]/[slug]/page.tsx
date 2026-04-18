@@ -1,11 +1,11 @@
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { after } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { getInstallationOctokit, getPostContent, getLastCommitSha } from "@/lib/github";
+import { getInstallationOctokit, getPostContent, getPostGit } from "@/lib/github";
 import { EssayBadge } from "@/components/essay-badge";
 import { PostNav } from "@/components/post-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -85,6 +85,7 @@ export default async function PostPage({ params }: { params: Promise<{ username:
         select: {
           showUsername: true,
           profilePublic: true,
+          showRevisionHistory: true,
           theme: true,
           links: true,
           analyticsId: true,
@@ -97,6 +98,9 @@ export default async function PostPage({ params }: { params: Promise<{ username:
   const s = user.settings;
   const isOwner = session?.user?.id === user.id;
 
+  const host = (await headers()).get("host") ?? "";
+  const isCustomDomain = host !== "essay.sh" && host !== "www.essay.sh" && !host.endsWith(".vercel.app") && !host.startsWith("localhost");
+
   const post = await db.post.findFirst({
     where: {
       userId: user.id,
@@ -104,11 +108,18 @@ export default async function PostPage({ params }: { params: Promise<{ username:
       ...(isOwner ? {} : { published: true, public: true }),
     },
   });
-  if (!post) notFound();
+  if (!post) {
+    // Follow a rename redirect if one exists for this (user, oldSlug).
+    const rename = await db.slugRedirect.findUnique({
+      where: { userId_oldSlug: { userId: user.id, oldSlug: slug } },
+      include: { post: true },
+    });
+    if (rename?.post && (isOwner || (rename.post.published && rename.post.public))) {
+      redirect(isCustomDomain ? `/${rename.post.slug}` : `/${username}/${rename.post.slug}`);
+    }
+    notFound();
+  }
   if (!s?.profilePublic && !isOwner) notFound();
-
-  const host = (await headers()).get("host") ?? "";
-  const isCustomDomain = host !== "essay.sh" && host !== "www.essay.sh" && !host.endsWith(".vercel.app") && !host.startsWith("localhost");
   const hasGitHub = !!(user.githubInstallationId && user.githubRepo && user.githubUsername);
   const displayName = user.name || (s?.showUsername ? username : null);
 
@@ -116,12 +127,12 @@ export default async function PostPage({ params }: { params: Promise<{ username:
   if (s?.theme === "pg") {
     if (isOwner) {
       let content: string | null = null;
-      let commitSha: string | null = null;
+      let git: Awaited<ReturnType<typeof getPostGit>> = null;
       if (hasGitHub) {
         const octokit = await getInstallationOctokit(user.githubInstallationId!);
-        [content, commitSha] = await Promise.all([
+        [content, git] = await Promise.all([
           getPostContent(octokit, user.githubUsername!, user.githubRepo!, slug),
-          post.published ? getLastCommitSha(octokit, user.githubUsername!, user.githubRepo!, slug) : Promise.resolve(null),
+          post.published ? getPostGit(octokit, user.githubUsername!, user.githubRepo!, slug) : Promise.resolve(null),
         ]);
       }
       return (
@@ -131,7 +142,7 @@ export default async function PostPage({ params }: { params: Promise<{ username:
           <Editor
             username={username}
             post={{ id: post.id, title: post.title, content: content ?? "", slug: post.slug, published: post.published, public: post.public }}
-            commitSha={commitSha}
+            git={git}
             github={hasGitHub ? { username: user.githubUsername!, repo: user.githubRepo! } : null}
           />
         </div>
@@ -167,19 +178,19 @@ export default async function PostPage({ params }: { params: Promise<{ username:
   // Non-PG theme — owner gets editor
   if (isOwner) {
     let content: string | null = null;
-    let commitSha: string | null = null;
+    let git: Awaited<ReturnType<typeof getPostGit>> = null;
     if (hasGitHub) {
       const octokit = await getInstallationOctokit(user.githubInstallationId!);
-      [content, commitSha] = await Promise.all([
+      [content, git] = await Promise.all([
         getPostContent(octokit, user.githubUsername!, user.githubRepo!, slug),
-        post.published ? getLastCommitSha(octokit, user.githubUsername!, user.githubRepo!, slug) : Promise.resolve(null),
+        post.published ? getPostGit(octokit, user.githubUsername!, user.githubRepo!, slug) : Promise.resolve(null),
       ]);
     }
     return (
       <Editor
         username={username}
         post={{ id: post.id, title: post.title, content: content ?? "", slug: post.slug, published: post.published, public: post.public }}
-        commitSha={commitSha}
+        git={git}
         github={hasGitHub ? { username: user.githubUsername!, repo: user.githubRepo! } : null}
         variant={(!s?.theme || s.theme === "default") ? "default" : "gr"}
       />
@@ -188,9 +199,13 @@ export default async function PostPage({ params }: { params: Promise<{ username:
 
   after(() => db.post.update({ where: { id: post.id }, data: { views: { increment: 1 } } }));
 
-  const [prevPost, nextPost] = await Promise.all([
+  const showRevisions = !!s?.showRevisionHistory && hasGitHub && post.published && (!s.theme || s.theme === "default");
+  const [prevPost, nextPost, git] = await Promise.all([
     post.publishedAt ? db.post.findFirst({ where: { userId: user.id, published: true, public: true, publishedAt: { lt: post.publishedAt } }, orderBy: { publishedAt: "desc" }, select: { slug: true } }) : null,
     post.publishedAt ? db.post.findFirst({ where: { userId: user.id, published: true, public: true, publishedAt: { gt: post.publishedAt } }, orderBy: { publishedAt: "asc" }, select: { slug: true } }) : null,
+    showRevisions
+      ? getInstallationOctokit(user.githubInstallationId!).then((oc) => getPostGit(oc, user.githubUsername!, user.githubRepo!, slug))
+      : Promise.resolve(null),
   ]);
   const base = isCustomDomain ? "" : `/${username}`;
   const prevHref = prevPost ? `${base}/${prevPost.slug}` : null;
@@ -232,6 +247,20 @@ export default async function PostPage({ params }: { params: Promise<{ username:
                     <>
                       <span>{new Date(post.publishedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
                       <span style={{ opacity: 0.5 }}>({timeAgo(new Date(post.publishedAt))})</span>
+                    </>
+                  )}
+                  {git && (
+                    <>
+                      <span style={{ opacity: 0.5 }}>·</span>
+                      <Link
+                        href={`https://github.com/${user.githubUsername}/${user.githubRepo}/commits/main/posts/${post.slug}.md`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:opacity-100 transition-opacity"
+                        style={{ opacity: 0.8 }}
+                      >
+                        {git.count} revision{git.count === 1 ? "" : "s"}
+                      </Link>
                     </>
                   )}
                 </div>

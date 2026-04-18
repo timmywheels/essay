@@ -71,20 +71,44 @@ export async function writePostToGitHub(
   });
 }
 
-export async function getLastCommitSha(
+export type PostGit = {
+  sha: string;
+  count: number;
+  message: string;
+  date: string;
+};
+
+export async function getPostGit(
   octokit: Octokit,
   owner: string,
   repo: string,
   slug: string,
-): Promise<string | null> {
+): Promise<PostGit | null> {
   try {
-    const { data } = await octokit.repos.listCommits({
+    const res = await octokit.repos.listCommits({
       owner,
       repo,
       path: `posts/${slug}.md`,
       per_page: 1,
     });
-    return data[0]?.sha ?? null;
+    const latest = res.data[0];
+    if (!latest) return null;
+
+    // Derive total commit count from the Link header's `rel="last"` page number
+    // (with per_page=1, last-page == total commits).
+    let count = 1;
+    const link = (res.headers as Record<string, string | undefined>).link;
+    if (link) {
+      const m = link.match(/<[^>]*[?&]page=(\d+)[^>]*>;\s*rel="last"/);
+      if (m) count = parseInt(m[1], 10);
+    }
+
+    return {
+      sha: latest.sha,
+      count,
+      message: latest.commit.message ?? "",
+      date: latest.commit.author?.date ?? latest.commit.committer?.date ?? "",
+    };
   } catch {
     return null;
   }
@@ -105,6 +129,62 @@ export async function getPostContent(
   } catch {
     return null;
   }
+}
+
+/**
+ * Rename (and optionally update) a post file in a single commit, using the Git
+ * Data API. This preserves git-native rename detection — `git log --follow`
+ * traces history across the rename, and GitHub's UI shows it as a rename.
+ * Doing it via the Contents API instead produces two unrelated commits
+ * (delete + add) with no relationship to each other.
+ */
+export async function renamePostOnGitHub(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  oldSlug: string,
+  newSlug: string,
+  markdown: string,
+  title: string,
+) {
+  const oldPath = `posts/${oldSlug}.md`;
+  const newPath = `posts/${newSlug}.md`;
+
+  const { data: repoInfo } = await octokit.repos.get({ owner, repo });
+  const branch = repoInfo.default_branch;
+
+  const { data: ref } = await octokit.git.getRef({ owner, repo, ref: `heads/${branch}` });
+  const parentSha = ref.object.sha;
+
+  const { data: parentCommit } = await octokit.git.getCommit({ owner, repo, commit_sha: parentSha });
+
+  const { data: blob } = await octokit.git.createBlob({
+    owner,
+    repo,
+    content: Buffer.from(markdown).toString("base64"),
+    encoding: "base64",
+  });
+
+  const { data: tree } = await octokit.git.createTree({
+    owner,
+    repo,
+    base_tree: parentCommit.tree.sha,
+    // A tree entry with sha: null removes the path from the tree.
+    tree: [
+      { path: newPath, mode: "100644", type: "blob", sha: blob.sha },
+      { path: oldPath, mode: "100644", type: "blob", sha: null } as never,
+    ],
+  });
+
+  const { data: commit } = await octokit.git.createCommit({
+    owner,
+    repo,
+    message: `rename: ${oldSlug} → ${newSlug}${title ? ` (${title})` : ""}`,
+    tree: tree.sha,
+    parents: [parentSha],
+  });
+
+  await octokit.git.updateRef({ owner, repo, ref: `heads/${branch}`, sha: commit.sha });
 }
 
 export async function deletePostFromGitHub(

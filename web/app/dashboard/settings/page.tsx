@@ -36,6 +36,7 @@ export default async function SettingsPage() {
         initialProfilePublic={s?.profilePublic ?? true}
         initialShowUsername={s?.showUsername ?? true}
         initialShowActivityGraph={s?.showActivityGraph ?? true}
+        initialShowRevisionHistory={s?.showRevisionHistory ?? false}
         initialTheme={s?.theme ?? "default"}
         initialAnalyticsId={s?.analyticsId ?? ""}
         username={user.username ?? ""}

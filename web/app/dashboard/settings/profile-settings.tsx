@@ -28,12 +28,13 @@ interface Props {
   initialProfilePublic: boolean;
   initialShowUsername: boolean;
   initialShowActivityGraph: boolean;
+  initialShowRevisionHistory: boolean;
   initialTheme: string;
   initialAnalyticsId: string;
   username: string;
 }
 
-export function ProfileSettings({ initialName, initialBio, initialLinks, initialProfilePublic, initialShowUsername, initialShowActivityGraph, initialTheme, initialAnalyticsId, username }: Props) {
+export function ProfileSettings({ initialName, initialBio, initialLinks, initialProfilePublic, initialShowUsername, initialShowActivityGraph, initialShowRevisionHistory, initialTheme, initialAnalyticsId, username }: Props) {
   const [name, setName] = useState(initialName);
   const [bio, setBio] = useState(initialBio);
   const [links, setLinks] = useState<LinkItem[]>(initialLinks.length ? initialLinks : []);
@@ -41,6 +42,7 @@ export function ProfileSettings({ initialName, initialBio, initialLinks, initial
   const [profilePublic, setProfilePublic] = useState(initialProfilePublic);
   const [showUsername, setShowUsername] = useState(initialShowUsername);
   const [showActivityGraph, setShowActivityGraph] = useState(initialShowActivityGraph);
+  const [showRevisionHistory, setShowRevisionHistory] = useState(initialShowRevisionHistory);
   const [theme, setTheme] = useState(initialTheme);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
 
@@ -188,6 +190,18 @@ export function ProfileSettings({ initialName, initialBio, initialLinks, initial
           />
           <p className="text-xs" style={{ color: "var(--muted)", opacity: 0.6 }}>
             {showActivityGraph ? "publishing history is shown on your profile." : "activity graph is hidden from your profile."}
+          </p>
+        </div>
+
+        <div className="space-y-1">
+          <Toggle
+            checked={showRevisionHistory}
+            onChange={(val) => { setShowRevisionHistory(val); patch({ showRevisionHistory: val }); }}
+            label="show revision history"
+          />
+          <p className="text-xs" style={{ color: "var(--muted)", opacity: 0.6 }}>
+            {showRevisionHistory ? "readers see the number of revisions on each post, linking to github." : "revision history is hidden from readers."}
+            {theme !== "default" && <span style={{ opacity: 0.7 }}> only shown on the default theme.</span>}
           </p>
         </div>
 

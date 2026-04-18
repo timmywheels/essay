@@ -29,4 +29,5 @@ func init() {
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(publishCmd)
 	rootCmd.AddCommand(editCmd)
+	rootCmd.AddCommand(suggestCmd)
 }

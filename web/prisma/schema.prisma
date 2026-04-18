@@ -8,21 +8,22 @@ datasource db {
 }
 
 model User {
-  id                   String        @id @default(cuid())
+  id                   String         @id @default(cuid())
   name                 String?
-  email                String?       @unique
-  emailVerified        DateTime?     @map("email_verified")
+  email                String?        @unique
+  emailVerified        DateTime?      @map("email_verified")
   image                String?
-  username             String?       @unique
-  githubUsername       String?       @unique @map("github_username")
-  githubInstallationId String?       @map("github_installation_id")
-  githubRepo           String?       @map("github_repo")
-  cliToken             String?       @unique @map("cli_token")
-  createdAt            DateTime      @default(now()) @map("created_at")
+  username             String?        @unique
+  githubUsername       String?        @unique @map("github_username")
+  githubInstallationId String?        @map("github_installation_id")
+  githubRepo           String?        @map("github_repo")
+  cliToken             String?        @unique @map("cli_token")
+  createdAt            DateTime       @default(now()) @map("created_at")
   posts                Post[]
   accounts             Account[]
   sessions             Session[]
   settings             UserSettings?
+  slugRedirects        SlugRedirect[]
 
   @@map("users")
 }
@@ -35,6 +36,7 @@ model UserSettings {
   profilePublic     Boolean   @default(true) @map("profile_public")
   showUsername      Boolean   @default(true) @map("show_username")
   showActivityGraph Boolean   @default(true) @map("show_activity_graph")
+  showRevisionHistory Boolean @default(false) @map("show_revision_history")
   theme             String    @default("default")
   links             Json?
   customDomain      String?   @unique @map("custom_domain")
@@ -75,18 +77,33 @@ model Session {
 }
 
 model Post {
-  id          String    @id @default(cuid())
-  title       String
-  slug        String
-  published   Boolean   @default(false)
-  public      Boolean   @default(true)
-  publishedAt DateTime? @map("published_at")
-  views       Int       @default(0)
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  userId      String    @map("user_id")
-  user        User      @relation(fields: [userId], references: [id])
+  id            String         @id @default(cuid())
+  title         String
+  slug          String
+  published     Boolean        @default(false)
+  public        Boolean        @default(true)
+  publishedAt   DateTime?      @map("published_at")
+  views         Int            @default(0)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  userId        String         @map("user_id")
+  user          User           @relation(fields: [userId], references: [id])
+  slugRedirects SlugRedirect[]
 
   @@unique([userId, slug])
   @@map("posts")
+}
+
+model SlugRedirect {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  oldSlug   String   @map("old_slug")
+  postId    String   @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, oldSlug])
+  @@index([postId])
+  @@map("slug_redirects")
 }

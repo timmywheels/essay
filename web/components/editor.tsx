@@ -21,10 +21,17 @@ type Post = {
   public: boolean;
 };
 
+type PostGit = {
+  sha: string;
+  count: number;
+  message: string;
+  date: string;
+};
+
 type Props = {
   username: string;
   post?: Post;
-  commitSha?: string | null;
+  git?: PostGit | null;
   github?: { username: string; repo: string } | null;
   variant?: "default" | "gr";
 };
@@ -93,7 +100,44 @@ const baseTheme = EditorView.theme({
 
 type SaveState = "idle" | "committing" | "pushing";
 
-export default function Editor({ username, post, commitSha, github, variant }: Props) {
+function timeAgo(iso: string): string {
+  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
+// Approximate +added / -removed lines using a multiset difference.
+// Not a true LCS diff, but stable enough for a UI status hint.
+function diffStats(before: string, after: string): { added: number; removed: number } {
+  if (before === after) return { added: 0, removed: 0 };
+  const tally = (s: string) => {
+    const m = new Map<string, number>();
+    for (const line of s.split("\n")) m.set(line, (m.get(line) ?? 0) + 1);
+    return m;
+  };
+  const b = tally(before);
+  const a = tally(after);
+  let added = 0, removed = 0;
+  for (const [line, ac] of a) {
+    const bc = b.get(line) ?? 0;
+    if (ac > bc) added += ac - bc;
+  }
+  for (const [line, bc] of b) {
+    const ac = a.get(line) ?? 0;
+    if (bc > ac) removed += bc - ac;
+  }
+  return { added, removed };
+}
+
+export default function Editor({ username, post, git, github, variant }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [title, setTitle] = useState(post?.title ?? "");
@@ -108,9 +152,16 @@ export default function Editor({ username, post, commitSha, github, variant }: P
   const [uploading, setUploading] = useState(false);
   const [slashMenu, setSlashMenu] = useState<SlashMenuState | null>(null);
 
-  const initialTitle = useRef(post?.title ?? "");
-  const initialContent = useRef(post?.content ?? "");
-  const isDirty = title !== initialTitle.current || content !== initialContent.current;
+  const [baseline, setBaseline] = useState({ title: post?.title ?? "", content: post?.content ?? "", slug: post?.slug ?? "" });
+  const isDirty = title !== baseline.title || content !== baseline.content || slug !== baseline.slug;
+  const hasContent = title.trim() !== "" || content.trim() !== "";
+  const saving = saveState !== "idle";
+  const canCommit = !!slug && !saving && (post ? isDirty : hasContent);
+  const canPush = !!slug && !saving && (post ? (isDirty || !isPublished) : hasContent);
+  const stats = useMemo(
+    () => (isDirty ? diffStats(baseline.content, content) : { added: 0, removed: 0 }),
+    [isDirty, baseline.content, content],
+  );
 
   const editorViewRef = useRef<EditorView | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -171,9 +222,17 @@ export default function Editor({ username, post, commitSha, github, variant }: P
         return;
       }
 
+      setBaseline({ title, content, slug });
+
       if (publish) {
         setIsPublished(true);
         router.push(isPublic ? `/${username}/${slug}` : `/${username}`);
+        return;
+      }
+
+      // Slug rename: keep the URL in sync so refresh/back works.
+      if (slug !== post.slug) {
+        router.replace(`/${username}/${slug}`);
         return;
       }
 
@@ -386,41 +445,60 @@ export default function Editor({ username, post, commitSha, github, variant }: P
       </button>
       <button
         onClick={() => save(false)}
-        disabled={saveState !== "idle"}
-        className={`text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60 ${saveState === "committing" ? "text-shimmer" : ""}`}
-        style={saveState === "committing" ? undefined : { color: "var(--muted)" }}
+        disabled={!canCommit}
+        title={!canCommit && !saving ? (post ? "nothing to commit" : "write something first") : undefined}
+        className={`text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60 disabled:no-underline disabled:hover:opacity-100 disabled:cursor-not-allowed ${saveState === "committing" ? "text-shimmer" : ""}`}
+        style={saveState === "committing" ? undefined : { color: "var(--muted)", opacity: canCommit ? 1 : 0.4 }}
       >
         commit
       </button>
       <button
         onClick={() => save(true)}
-        disabled={saveState !== "idle" || !slug}
-        className={`text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60 ${saveState === "pushing" ? "text-shimmer" : ""}`}
-        style={saveState === "pushing" ? undefined : { color: "var(--muted)" }}
+        disabled={!canPush}
+        title={!canPush && !saving ? (post ? "nothing to push" : "write something first") : undefined}
+        className={`text-xs underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-60 disabled:no-underline disabled:hover:opacity-100 disabled:cursor-not-allowed ${saveState === "pushing" ? "text-shimmer" : ""}`}
+        style={saveState === "pushing" ? undefined : { color: "var(--muted)", opacity: canPush ? 1 : 0.4 }}
       >
         push
       </button>
     </div>
   );
 
+  const sep = <span style={{ opacity: 0.5 }}>·</span>;
   const gitStatus = (
     <div className="flex items-center gap-1.5 font-mono text-xs" style={{ color: "var(--muted)", opacity: 0.5 }}>
       <span>main</span>
-      <span>·</span>
+      {sep}
       {saveState !== "idle" ? (
         <span className="text-shimmer">{saveState === "committing" ? "committing…" : "pushing…"}</span>
       ) : isDirty ? (
-        <span>uncommitted changes</span>
-      ) : commitSha && github ? (
-        <a
-          href={`https://github.com/${github.username}/${github.repo}/commit/${commitSha}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:opacity-100 transition-opacity"
-          style={{ opacity: 0.8 }}
-        >
-          {commitSha.slice(0, 7)}
-        </a>
+        <>
+          {stats.added > 0 && <span>+{stats.added}</span>}
+          {stats.removed > 0 && <span>−{stats.removed}</span>}
+          {(stats.added > 0 || stats.removed > 0) && sep}
+          <span>uncommitted</span>
+        </>
+      ) : git && github ? (
+        <>
+          <a
+            href={`https://github.com/${github.username}/${github.repo}/commit/${git.sha}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={git.message}
+            className="hover:opacity-100 transition-opacity"
+            style={{ opacity: 0.8 }}
+          >
+            {git.sha.slice(0, 7)}
+          </a>
+          {sep}
+          <span>{git.count} commit{git.count === 1 ? "" : "s"}</span>
+          {git.date && (
+            <>
+              {sep}
+              <span>{timeAgo(git.date)}</span>
+            </>
+          )}
+        </>
       ) : (
         <span>{isPublished ? "committed" : "draft"}</span>
       )}

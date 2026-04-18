@@ -112,3 +112,14 @@ func (c *Client) UpdatePost(id, title, slug, content string, public bool) (*Post
 	}, &post)
 	return &post, err
 }
+
+func (c *Client) SuggestTopics(just bool, answers []string) ([]string, error) {
+	var result struct {
+		Suggestions []string `json:"suggestions"`
+	}
+	err := c.do("POST", "/api/suggest", map[string]any{
+		"just":    just,
+		"answers": answers,
+	}, &result)
+	return result.Suggestions, err
+}

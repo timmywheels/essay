@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { resolveUser } from "@/lib/cli-auth";
-import { getInstallationOctokit, buildMarkdown, writePostToGitHub, deletePostFromGitHub, getPostContent } from "@/lib/github";
+import { getInstallationOctokit, buildMarkdown, writePostToGitHub, deletePostFromGitHub, renamePostOnGitHub, getPostContent } from "@/lib/github";
 
 const patchSchema = z.object({
   title: z.string().optional(),
@@ -68,20 +68,37 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     content = await getPostContent(octokit, user.githubUsername, user.githubRepo, post.slug) ?? "";
   }
 
-  if (slug !== post.slug) {
-    await deletePostFromGitHub(octokit, user.githubUsername, user.githubRepo, post.slug);
-  }
+  const slugChanged = slug !== post.slug;
 
   const markdown = buildMarkdown({ title, content, slug, published: !!published, public: !!isPublic, publishedAt });
-  await writePostToGitHub(octokit, user.githubUsername, user.githubRepo, slug, markdown, title);
+  if (slugChanged) {
+    // Atomic rename: delete old path and add new path in a single commit so
+    // git's rename detection preserves history across the slug change.
+    await renamePostOnGitHub(octokit, user.githubUsername, user.githubRepo, post.slug, slug, markdown, title);
+  } else {
+    await writePostToGitHub(octokit, user.githubUsername, user.githubRepo, slug, markdown, title);
+  }
 
-  const updated = await db.post.update({
-    where: { id },
-    data: { title, slug, published: !!published, public: !!isPublic, publishedAt },
+  const updated = await db.$transaction(async (tx) => {
+    const result = await tx.post.update({
+      where: { id },
+      data: { title, slug, published: !!published, public: !!isPublic, publishedAt },
+    });
+    if (slugChanged) {
+      // Clear any stale redirect pointing at the new slug; then record the rename.
+      await tx.slugRedirect.deleteMany({ where: { userId, oldSlug: slug } });
+      await tx.slugRedirect.upsert({
+        where: { userId_oldSlug: { userId, oldSlug: post.slug } },
+        create: { userId, oldSlug: post.slug, postId: post.id },
+        update: { postId: post.id, createdAt: new Date() },
+      });
+    }
+    return result;
   });
 
   revalidatePath(`/${user.username}/${slug}`);
   revalidatePath(`/${user.username}`);
+  if (slugChanged) revalidatePath(`/${user.username}/${post.slug}`);
 
   return NextResponse.json(updated);
 }
