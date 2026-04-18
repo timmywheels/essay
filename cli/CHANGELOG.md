@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/timmywheels/essay/compare/v0.6.0...v0.7.0) (2026-04-18)
+
+
+### Features
+
+* update publishing ux ([1faf441](https://github.com/timmywheels/essay/commit/1faf441b5a303dfa44e6c627cb5bc1fbb4a08e18))
+
 ## [0.6.0](https://github.com/timmywheels/essay/compare/v0.5.0...v0.6.0) (2026-04-08)
 
 
